@@ -2,12 +2,12 @@ import prettyMilliseconds from 'pretty-ms'
 import {useRef} from 'react'
 const prettyMetric = require('pretty-metric')
 
-export default function Instruction({ index, instruction, mode }) {
+export default function Instruction({ index, instruction}) {
     const text = useRef('')
     const distance = useRef(0)
     const time = useRef(0)
 
-    if (mode.includes('traffic')) {
+    if (instruction.maneuver) {     // test for mapbox route
         text.current = instruction?.maneuver?.instruction
         distance.current = instruction?.distance
         time.current = instruction?.duration_typical * 1000

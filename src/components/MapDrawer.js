@@ -11,6 +11,7 @@ import getBalancedRoute from '../controllers/getBalancedRoute.js'
 import getLeastCarbonRoute from '../controllers/getLeastCarbonRoute.js'
 const prettyMetric = require('pretty-metric')
 const mapboxgl = require('mapbox-gl/dist/mapbox-gl.js')
+import getGeojson from '../utils/getGeojson'
 
 export default function MapDrawer() {
     // Drawer
@@ -21,8 +22,9 @@ export default function MapDrawer() {
     // Form
     const source = useInput('') //custom hook
     const destination = useInput('')
-    const [mode, setMode] = useState('car')
-    const [routePreference, setRoutePreference] = useState('shortest')
+    const [mode, setMode] = useState('')
+    const [routePreference, setRoutePreference] = useState('')
+    const [delayCode, setDelayCode] = useState(null)
     const [distance, setDistance] = useState(0)
     const [time, setTime] = useState(0)
     const [exposure, setExposure] = useState(0)
@@ -56,11 +58,12 @@ export default function MapDrawer() {
         // console.log(`Position inside the setupMap is: ${position}`)
         window.$map = new mapboxgl.Map({
             container: 'map-container',
-            style: 'mapbox://styles/saditya9211/clbw1qkuo000u15o2afjcpknz',
+            // style: 'mapbox://styles/saditya9211/clbw1qkuo000u15o2afjcpknz',
+            style: 'mapbox://styles/saditya9211/clky9t1r1006m01qsaki0c8nz',
             center: position,
             zoom: 9,
             // boxZoom: true,
-            // doubleClickZoom: true,
+            doubleClickZoom: true,
             // hash: true,
         }).fitBounds(
             [
@@ -214,7 +217,7 @@ export default function MapDrawer() {
         window.$map.fitBounds(
             [
                 [minLng, minLat], // Southwest coordinates
-                [minLng, maxLat], // Northeast coordinates
+                [maxLng, maxLat], // Northeast coordinates
             ],
             {
                 padding: 100,
@@ -252,8 +255,8 @@ export default function MapDrawer() {
         //display the shortest route in the given mode
 
         console.log('Inside getAllRoutes...')
-        let temp_mode = mode
-        let temp_routePreference = routePreference //intially - all
+        // let temp_mode = mode
+        // let temp_routePreference = routePreference //intially - all
 
         // removing all the other routes
         let layers = window.$map.getStyle().layers
@@ -265,177 +268,103 @@ export default function MapDrawer() {
             }
         }
 
-        let geojson
-        let routes
+        let geojson, routeList, routeId
 
-        //Fastest
-        //display the fastest route in the given mode
-        temp_routePreference = 'fastest'
-        console.log('Fastest Path...')
-        if (temp_mode == 'car') temp_mode = 'driving-traffic'
-        else if (temp_mode == 'truck') temp_mode = 'driving-traffic'
-
-        if (temp_mode.includes('traffic')) {
-            routes = await getMapboxRoutes()
-        } else {
-            routes = await getGraphhopperRoutes(temp_mode)
-        }
-        ;({ geojson, routes } = await getFastestRoute(routes, temp_mode))
-
-        const fastestRouteTime = routes[0].time
-        const fastestRouteDistance = routes[0].distance
-
-        let routeId = `${temp_mode}-${temp_routePreference}-${start.position[0]}-${start.position[1]}-${end.position[0]}-${end.position[1]}-route-all`
-        if (window.$map.getSource(routeId)) {
-            window.$map.getSource(routeId).setData(geojson)
-            setFastestRoute(routes[0])
-            console.log('changing the route source data...')
-        } else {
-            console.log('displaying a new route...')
-            setFastestRoute(routes[0])
-            displayRoute(geojson, start, end, routeId, 'fastest')
+        // getting all the routes
+        const body = {
+            source: source.position,
+            destination: destination.position,
+            delayCode: delayCode,
+            mode: mode,
+            route_preference: routePreference,
         }
 
-        //Shortest Path
-        temp_routePreference = 'shortest'
-
-        console.log('Shortest Path...')
-        // if (temp_mode == 'truck-traffic') temp_mode = 'truck'
-        // if (temp_mode == 'driving-traffic') temp_mode = 'car'
-
-        if (temp_mode == 'driving-traffic') {
-            routes = await getMapboxRoutes(temp_mode)
-        } else {
-            routes = await getGraphhopperRoutes(temp_mode)
+        const requestOptions = {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(body),
         }
-        console.log({ routes })
-        ;({ geojson, routes } = await getShortestRoute(routes, temp_mode))
 
-        routeId = `${temp_mode}-${temp_routePreference}-${start.position[0]}-${start.position[1]}-${end.position[0]}-${end.position[1]}-route-all`
+        const response = await fetch(
+            process.env.REACT_APP_SERVER_URL + 'all-routes',
+            requestOptions
+        )
+        routeList = await response.json()
+
+        console.log('Route found: ', routeList)
+
+        // Shortest - Graphhopper
+        console.log('shortest', routeList.shortest)
+        geojson = getGeojson(routeList.shortest)
+        routeId = `${mode}-${routePreference}-${start.position[0]}-${start.position[1]}-${end.position[0]}-${end.position[1]}-route-all-shortest`
+        setShortestRoute(routeList.shortest)
         if (window.$map.getSource(routeId)) {
             console.log('changing the route source data...')
-            setShortestRoute(routes[0])
             window.$map.getSource(routeId).setData(geojson)
         } else {
             console.log('displaying a new route...')
-            setShortestRoute(routes[0])
             displayRoute(geojson, start, end, routeId, 'shortest')
         }
 
-        //Leap Route
-        console.log('Leap Path...')
-        //display the leap route in the given mode
-        temp_routePreference = 'leap'
-
-        if (temp_mode == 'truck-traffic') temp_mode = 'truck'
-        else if (temp_mode == 'driving-traffic') temp_mode = 'car'
-
-        routes = await getGraphhopperRoutes(temp_mode)
-        console.log('The graphhopper routes is, ', { routes })
-        ;({ geojson, routes } = await getLeapRoute(routes, temp_mode))
-
-        if (temp_mode == 'car') {
-            routes[0].time =
-                (routes[0].distance / fastestRouteDistance) * fastestRouteTime
-        }
-
-        // dude
-        if (routes[0].distance < shortestRoute.distance) {
-            routes[0].distance = 1.01 * shortestRoute.distance
-        }
-
-        if (routes[0].time < fastestRoute.time) {
-            routes[0].time = 1.01 * fastestRoute.time
-        }
-
-        routeId = `${temp_mode}-${temp_routePreference}-${start.position[0]}-${start.position[1]}-${end.position[0]}-${end.position[1]}-route-all`
+        // Leap - Graphhopper
+        console.log('Leap route: ', routeList.leap_graphhopper)
+        geojson = getGeojson(routeList.leap_graphhopper)
+        routeId = `${mode}-${routePreference}-${start.position[0]}-${start.position[1]}-${end.position[0]}-${end.position[1]}-route-all-leap`
+        setLeapRoute(routeList.leap_graphhopper)
         if (window.$map.getSource(routeId)) {
             console.log('changing the route source data...')
-            setLeapRoute(routes[0])
             window.$map.getSource(routeId).setData(geojson)
         } else {
             console.log('displaying a new route...')
-            console.log({ geojson })
-            console.log({ routes })
-            setLeapRoute(routes[0])
             displayRoute(geojson, start, end, routeId, 'leap')
         }
 
-        //Balanced Route
-        //display the balanced route in the given mode
-        console.log('Balanced Path...')
-
-        temp_routePreference = 'balanced'
-
-        if (temp_mode == 'car') temp_mode = 'driving-traffic'
-        else if (temp_mode == 'truck') temp_mode = 'truck-traffic'
-
-        if (
-            temp_mode === 'foot' ||
-            temp_mode === 'bike' ||
-            temp_mode === 'scooter'
-        ) {
-            routes = await getGraphhopperRoutes(temp_mode)
-        } else {
-            routes = await getMapboxRoutes()
-        }
-
-        ;({ geojson, routes } = await getBalancedRoute(routes, temp_mode))
-
-        routeId = `${temp_mode}-${temp_routePreference}-${start.position[0]}-${start.position[1]}-${end.position[0]}-${end.position[1]}-route-all`
-        if (window.$map.getSource(routeId)) {
-            console.log('changing the current source data...')
-            window.$map.getSource(routeId).setData(geojson)
-            setBalancedRoute(routes[0])
-            setIsLoading(false)
-        } else {
-            console.log('Displaying a new route...')
-            displayRoute(geojson, start, end, routeId, 'balanced')
-            setBalancedRoute(routes[0])
-            setIsLoading(false)
-        }
-
-        // Least Carbon Emission Route
-        //display the least carbon emission route in the given mode
-        console.log('Least Carbon Emission Path...')
-        temp_routePreference = 'emission'
-
-        if (temp_mode == 'driving-traffic') temp_mode = 'car'
-
-        routes = await getGraphhopperRoutes(temp_mode)
-        console.log('The graphhopper routes is, ', { routes })
-        ;({ geojson, routes } = await getLeastCarbonRoute(
-            source,
-            destination,
-            temp_mode
-        ))
-
-        if (temp_mode == 'car') {
-            routes[0].time =
-                (routes[0].distance / fastestRouteDistance) * fastestRouteTime
-        }
-
-        // dude
-        if (routes[0].distance < shortestRoute.distance) {
-            routes[0].distance = 1.01 * shortestRoute.distance
-        }
-
-        if (routes[0].time < fastestRoute.time) {
-            routes[0].time = 1.01 * fastestRoute.time
-        }
-
-        routeId = `${temp_mode}-${temp_routePreference}-${start.position[0]}-${start.position[1]}-${end.position[0]}-${end.position[1]}-route-all`
+        // Lco2 - Graphhopper
+        console.log('Emision Route: ', routeList.lco2_graphhopper)
+        geojson = getGeojson(routeList.lco2_graphhopper)
+        routeId = `${mode}-${routePreference}-${start.position[0]}-${start.position[1]}-${end.position[0]}-${end.position[1]}-route-all-emission`
+        setLeastCarbonRoute(routeList.lco2_graphhopper)
         if (window.$map.getSource(routeId)) {
             console.log('changing the route source data...')
-            setLeastCarbonRoute(routes[0])
             window.$map.getSource(routeId).setData(geojson)
         } else {
             console.log('displaying a new route...')
-            console.log({ geojson })
-            console.log({ routes })
-            setLeastCarbonRoute(routes[0])
             displayRoute(geojson, start, end, routeId, 'emission')
         }
+
+        // if (mode == 'driving-traffic' || mode == "scooter") {
+        // Balanced and Fastest
+        // Display Fastest Route: Mapbox
+        console.log('Fastest: ', routeList.fastest)
+        geojson = getGeojson(routeList.fastest)
+        routeId = `${mode}-${routePreference}-${start.position[0]}-${start.position[1]}-${end.position[0]}-${end.position[1]}-route-all-fastest`
+        setFastestRoute(routeList.fastest)
+        if (window.$map.getSource(routeId)) {
+            console.log('changing the route source data...')
+            window.$map.getSource(routeId).setData(geojson)
+        } else {
+            console.log('displaying a new route...')
+            displayRoute(geojson, start, end, routeId, 'fastest')
+        }
+
+        // Displaying the Balanced Route
+        console.log('Balanced Route: ', routeList.balanced)
+        geojson = getGeojson(routeList.balanced)
+        routeId = `${mode}-${routePreference}-${start.position[0]}-${start.position[1]}-${end.position[0]}-${end.position[1]}-route-all-balanced`
+        setBalancedRoute(routeList.balanced)
+        if (window.$map.getSource(routeId)) {
+            console.log('changing the route source data...')
+            window.$map.getSource(routeId).setData(geojson)
+        } else {
+            console.log('displaying a new route...')
+            displayRoute(geojson, start, end, routeId, 'balanced')
+        }
+        // } else if (mode == 'scooter') {
+        //     // Balanced and Fastest
+
+        // }
     }
 
     // Fetches the route and displays it in the map
@@ -450,67 +379,67 @@ export default function MapDrawer() {
             try {
                 console.log('Before query...')
 
-                let temp_mode = mode
-                let temp_routePreference = routePreference
+                // let temp_mode = mode
+                // let temp_routePreference = routePreference
 
-                //modifies the mode and routePreference
-                function adjustModeRoutePreference(temp_routePreference) {
-                    if (temp_routePreference == 'balanced') {
-                        // if (temp_mode == 'car') {
-                        //     setMode('driving-traffic')
-                        //     temp_mode = 'driving-traffic'
-                        // }
-                        // else if (temp_mode == 'truck') {
-                        //     setMode('truck-traffic')
-                        //     temp_mode = 'truck-traffic'
-                        // }
-                    } else if (temp_routePreference == 'leap') {
-                        if (temp_mode == 'driving-traffic') {
-                            setMode('car') // not considering traffic in finding the leap path.
-                            temp_mode = 'car'
-                        }
-                        // else if (temp_mode == 'truck-traffic') {
-                        //     setMode('truck')
-                        //     temp_mode = 'truck'
-                        // }
-                    } else if (temp_routePreference == 'shortest') {
-                        if (temp_mode == 'truck-traffic') {
-                            // setMode('truck')
-                            // temp_mode = 'truck'
-                        } else if (temp_mode == 'driving-traffic') {
-                            // setMode('car')
-                            // temp_mode = 'car'
-                        }
-                    } else if (temp_routePreference == 'fastest') {
-                        if (temp_mode == 'truck') {
-                            // setMode('truck-traffic')
-                            // temp_mode = 'driving-traffic'
-                        } else if (temp_mode == 'car') {
-                            setMode('driving-traffic')
-                            temp_mode = 'driving-traffic'
-                        }
-                    } else if (temp_routePreference == 'emission') {
-                        if (temp_mode == 'driving-traffic') {
-                            setMode('car') // not considering traffic in LPER also.
-                            temp_mode = 'car'
-                        }
-                    }
-                }
+                // //modifies the mode and routePreference
+                // function adjustModeRoutePreference(temp_routePreference) {
+                //     if (temp_routePreference == 'balanced') {
+                //         // if (temp_mode == 'car') {
+                //         //     setMode('driving-traffic')
+                //         //     temp_mode = 'driving-traffic'
+                //         // }
+                //         // else if (temp_mode == 'truck') {
+                //         //     setMode('truck-traffic')
+                //         //     temp_mode = 'truck-traffic'
+                //         // }
+                //     } else if (temp_routePreference == 'leap') {
+                //         if (temp_mode == 'driving-traffic') {
+                //             setMode('car') // not considering traffic in finding the leap path.
+                //             temp_mode = 'car'
+                //         }
+                //         // else if (temp_mode == 'truck-traffic') {
+                //         //     setMode('truck')
+                //         //     temp_mode = 'truck'
+                //         // }
+                //     } else if (temp_routePreference == 'shortest') {
+                //         if (temp_mode == 'truck-traffic') {
+                //             // setMode('truck')
+                //             // temp_mode = 'truck'
+                //         } else if (temp_mode == 'driving-traffic') {
+                //             // setMode('car')
+                //             // temp_mode = 'car'
+                //         }
+                //     } else if (temp_routePreference == 'fastest') {
+                //         if (temp_mode == 'truck') {
+                //             // setMode('truck-traffic')
+                //             // temp_mode = 'driving-traffic'
+                //         } else if (temp_mode == 'car') {
+                //             setMode('driving-traffic')
+                //             temp_mode = 'driving-traffic'
+                //         }
+                //     } else if (temp_routePreference == 'emission') {
+                //         if (temp_mode == 'driving-traffic') {
+                //             setMode('car') // not considering traffic in LPER also.
+                //             temp_mode = 'car'
+                //         }
+                //     }
+                // }
 
-                // adjusting the mode and routePreference
-                adjustModeRoutePreference(temp_routePreference)
+                // // adjusting the mode and routePreference
+                // adjustModeRoutePreference(temp_routePreference)
 
-                console.log({ mode, routePreference })
-                console.log({ temp_mode, temp_routePreference })
+                // console.log({ mode, routePreference })
+                // console.log({ temp_mode, temp_routePreference })
 
-                let routes
-                if (temp_mode == 'driving-traffic') {
-                    routes = await getMapboxRoutes()
-                    console.log('Route from Mapbox: ', routes)
-                } else {
-                    routes = await getGraphhopperRoutes(temp_mode)
-                    console.log('Route from Graphhoperr: ', routes)
-                }
+                // let routes
+                // if (temp_mode == 'driving-traffic') {
+                //     routes = await getMapboxRoutes()
+                //     console.log('Route from Mapbox: ', routes)
+                // } else {
+                //     routes = await getGraphhopperRoutes(temp_mode)
+                //     console.log('Route from Graphhoperr: ', routes)
+                // }
                 // console.log({ routes })
                 // const geojson = {
                 //     type: 'Feature',
@@ -523,47 +452,67 @@ export default function MapDrawer() {
 
                 let geojson
                 let layers
-                let routeId = `${temp_mode}-${temp_routePreference}-${start.position[0]}-${start.position[1]}-${end.position[0]}-${end.position[1]}-route`
-                let temp_routes = routes
-                let shortestRouteTime
-                let shortestRouteDistance
-                switch (temp_routePreference) {
+                let routeId = `${mode}-${routePreference}-${start.position[0]}-${start.position[1]}-${end.position[0]}-${end.position[1]}-route`
+                let body, requestOptions, response, route
+                // let temp_routes = routes
+                // let shortestRouteTime
+                // let shortestRouteDistance
+                switch (routePreference) {
                     case 'shortest':
+                        // Always the Graphhopper Route
                         console.log('Shortest Path...')
-                        ;({ geojson, routes } = await getShortestRoute(
-                            routes,
-                            temp_mode
-                        ))
 
-                        setDistance(routes[0].distance)
-                        if (temp_mode.includes('traffic')) {
-                            setTime(routes[0].time)
-                            setInstructions(routes[0].legs[0].steps)
-                        } else {
-                            setTime(routes[0].time)
-                            setInstructions(routes[0].instructions)
+                        // Getting the shortest route
+                        body = {
+                            source: source.position,
+                            destination: destination.position,
+                            delayCode: delayCode,
+                            mode: mode,
+                            route_preference: 'shortest',
                         }
+
+                        requestOptions = {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify(body),
+                        }
+
+                        response = await fetch(
+                            process.env.REACT_APP_SERVER_URL + 'route',
+                            requestOptions
+                        )
+                        route = await response.json()
+
+                        console.log('Route found: ', route)
+
+                        geojson = getGeojson(route)
+                        setDistance(route.distance)
+                        setTime(route.time)
+                        // console.log(route.instructions)
+                        setInstructions(route.instructions)
+                        setExposure(route.total_exposure)
+                        setShortestRoute(route)
 
                         // display this map
                         // removing all the layers and sources from the map before adding the shortest route
-                        //we can also make the visibility property - 'none'
+                        // we can also make the visibility property - 'none'
                         layers = window.$map.getStyle().layers
-                        // console.log({ layers })
                         for (let i = 0; i < layers.length; i++) {
                             if (layers[i].id.includes('-route')) {
                                 window.$map.removeLayer(layers[i].id)
                                 window.$map.removeSource(layers[i].id)
                             }
                         }
-                        setExposure(routes[0].totalExposure)
-                        routeId = `${temp_mode}-${temp_routePreference}-${start.position[0]}-${start.position[1]}-${end.position[0]}-${end.position[1]}-route`
+
+                        routeId = `${mode}-${routePreference}-${start.position[0]}-${start.position[1]}-${end.position[0]}-${end.position[1]}-route`
                         if (window.$map.getSource(routeId)) {
                             window.$map.getSource(routeId).setData(geojson)
-                            setShortestRoute(routes[0])
+
                             setIsLoading(false)
                         } else {
                             // This is how we define the id of the route.
-                            setShortestRoute(routes[0])
                             displayRoute(
                                 geojson,
                                 start,
@@ -577,20 +526,45 @@ export default function MapDrawer() {
 
                     case 'fastest':
                         console.log('Fastest Path...')
-                        const res = await getFastestRoute(routes, temp_mode)
-                        geojson = res.geojson
-                        routes = res.routes
-
-                        setDistance(routes[0].distance)
-
-                        if (temp_mode.includes('traffic')) {
-                            setTime(routes[0].duration)
-                            setInstructions(routes[0].legs[0].steps)
-                        } else {
-                            setTime(routes[0].time)
-                            setInstructions(routes[0].instructions)
+                        // Getting the Fastest route
+                        body = {
+                            source: source.position,
+                            destination: destination.position,
+                            delayCode: delayCode,
+                            mode: mode,
+                            route_preference: 'fastest',
                         }
-                        setExposure(routes[0].totalExposure)
+
+                        requestOptions = {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify(body),
+                        }
+
+                        response = await fetch(
+                            process.env.REACT_APP_SERVER_URL + 'route',
+                            requestOptions
+                        )
+                        route = await response.json()
+                        geojson = getGeojson(route)
+
+                        // Type of Routes
+                        if (mode == 'scooter') {
+                            // Scooter Route - fastest: Graphhopper Route
+                            setTime(route.time)
+                            setInstructions(route.instructions)
+                        } else {
+                            // Car Route - fastest: Driving Traffic: Mapbox Route
+                            setTime(route.duration)
+                            console.log('Route Duration: ', route.duration)
+                            setInstructions(route.legs[0].steps)
+                        }
+                        setDistance(route.distance)
+                        setExposure(route.total_exposure)
+                        setFastestRoute(route)
+
                         //removing all the routes from map
                         layers = window.$map.getStyle().layers
                         for (let i = 0; i < layers.length; i++) {
@@ -600,13 +574,10 @@ export default function MapDrawer() {
                             }
                         }
 
-                        routeId = `${temp_mode}-${temp_routePreference}-${start.position[0]}-${start.position[1]}-${end.position[0]}-${end.position[1]}-route`
+                        routeId = `${mode}-${routePreference}-${start.position[0]}-${start.position[1]}-${end.position[0]}-${end.position[1]}-route`
                         if (window.$map.getSource(routeId)) {
                             window.$map.getSource(routeId).setData(geojson)
-                            setFastestRoute(routes[0])
-                            setIsLoading(false)
                         } else {
-                            setFastestRoute(routes[0])
                             displayRoute(
                                 geojson,
                                 start,
@@ -614,20 +585,80 @@ export default function MapDrawer() {
                                 routeId,
                                 'fastest'
                             )
-                            setIsLoading(false)
                         }
+                        setIsLoading(false)
                         break
 
                     case 'leap':
-                        console.log('LEAP Path...') //get the routes from the graphhopper api  ✅
-                        //get the aqi values for the routes from waqi api ✅
-                        //and then sort them based on the aqi values ✅
+                        // Always the Graphhopper Route
+                        console.log('LEAP Path...')
+                        // Getting the leap route
+                        body = {
+                            source: source.position,
+                            destination: destination.position,
+                            delayCode: delayCode,
+                            mode: mode,
+                            route_preference: 'leap',
+                        }
 
-                        // if the mode is driving traffic or truck traffic then ignore the leap path
-                        // otherwise find the leap path and display it.
+                        requestOptions = {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify(body),
+                        }
+
+                        response = await fetch(
+                            process.env.REACT_APP_SERVER_URL + 'route',
+                            requestOptions
+                        )
+                        route = await response.json()
+
+                        geojson = getGeojson(route)
+                        setDistance(route.distance)
+                        setTime(route.time)
+                        setInstructions(route.instructions)
+                        setExposure(route.total_exposure)
+                        setLeapRoute(route)
+
+                        // // estimating the time for leap route
+                        // temp_routes.sort((a, b) => a.distance - b.distance) //shorting based on distance
+                        // shortestRouteTime = temp_routes[0].time
+                        // shortestRouteDistance = temp_routes[0].distance
+
+                        // routes[0].time =
+                        //     (routes[0].distance / shortestRouteDistance) *
+                        //     shortestRouteTime
+
+                        // display this map
+                        // removing all the layers and sources from the map before adding the shortest route
+                        // we can also make the visibility property - 'none'
+                        layers = window.$map.getStyle().layers
+                        for (let i = 0; i < layers.length; i++) {
+                            if (layers[i].id.includes('-route')) {
+                                window.$map.removeLayer(layers[i].id)
+                                window.$map.removeSource(layers[i].id)
+                            }
+                        }
+
+                        routeId = `${mode}-${routePreference}-${start.position[0]}-${start.position[1]}-${end.position[0]}-${end.position[1]}-route`
+                        if (window.$map.getSource(routeId)) {
+                            window.$map.getSource(routeId).setData(geojson)
+                        } else {
+                            // This is how we define the id of the route.
+                            displayRoute(geojson, start, end, routeId, 'leap')
+                        }
+                        setIsLoading(false)
+                        break
+
+                        console.log('LEAP Path...') //get the routes from the graphhopper api  ✅
 
                         //ignoring the traffic in case of the greenest route.
-                        ;({ geojson, routes } = await getLeapRoute(routes, temp_mode))
+                        ;({ geojson, routes } = await getLeapRoute(
+                            routes,
+                            temp_mode
+                        ))
 
                         setDistance(routes[0].distance)
 
@@ -651,7 +682,7 @@ export default function MapDrawer() {
                                 window.$map.removeSource(layers[i].id)
                             }
                         }
-                        setExposure(routes[0].totalExposure)
+                        setExposure(routes[0].total_exposure)
                         routeId = `${temp_mode}-${temp_routePreference}-${start.position[0]}-${start.position[1]}-${end.position[0]}-${end.position[1]}-route`
                         //if same route is present - then we modify its source
                         if (window.$map.getSource(routeId)) {
@@ -667,25 +698,48 @@ export default function MapDrawer() {
                         break
 
                     case 'balanced':
-                        console.log('Balanced Path...')
-                        ;({ geojson, routes } = await getBalancedRoute(
-                            routes,
-                            mode
-                        ))
-
-                        setDistance(routes[0].distance)
-
-                        if (temp_mode.includes('traffic')) {
-                            setTime(routes[0].duration)
-                            setInstructions(routes[0].legs[0].steps)
-                        } else {
-                            setTime(routes[0].time)
-                            setInstructions(routes[0].instructions)
+                        // Similar to Fastest Path: Mapbox / Graphhopper
+                        console.log('Fastest Path...')
+                        // Getting the Fastest route
+                        body = {
+                            source: source.position,
+                            destination: destination.position,
+                            delayCode: delayCode,
+                            mode: mode,
+                            route_preference: 'balanced',
                         }
-                        setExposure(routes[0].totalExposure)
-                        //removing all the other routes
+
+                        requestOptions = {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify(body),
+                        }
+
+                        response = await fetch(
+                            process.env.REACT_APP_SERVER_URL + 'route',
+                            requestOptions
+                        )
+                        route = await response.json()
+                        geojson = getGeojson(route)
+
+                        // Type of Routes
+                        if (mode == 'scooter') {
+                            // Scooter Route - balanced: Graphhopper Route
+                            setTime(route.time)
+                            setInstructions(route.instructions)
+                        } else {
+                            // Car Route - balanced: driving-traffic: Mapbox Route
+                            setTime(route.duration)
+                            setInstructions(route.legs[0].steps)
+                        }
+                        setDistance(route.distance)
+                        setExposure(route.total_exposure)
+                        setBalancedRoute(route)
+
+                        //removing all the routes from map
                         layers = window.$map.getStyle().layers
-                        console.log({ layers })
                         for (let i = 0; i < layers.length; i++) {
                             if (layers[i].id.includes('-route')) {
                                 window.$map.removeLayer(layers[i].id)
@@ -693,13 +747,10 @@ export default function MapDrawer() {
                             }
                         }
 
-                        routeId = `${temp_mode}-${temp_routePreference}-${start.position[0]}-${start.position[1]}-${end.position[0]}-${end.position[1]}-route`
+                        routeId = `${mode}-${routePreference}-${start.position[0]}-${start.position[1]}-${end.position[0]}-${end.position[1]}-route`
                         if (window.$map.getSource(routeId)) {
                             window.$map.getSource(routeId).setData(geojson)
-                            setBalancedRoute(routes[0])
-                            setIsLoading(false)
                         } else {
-                            setBalancedRoute(routes[0])
                             displayRoute(
                                 geojson,
                                 start,
@@ -707,36 +758,49 @@ export default function MapDrawer() {
                                 routeId,
                                 'balanced'
                             )
-                            setIsLoading(false)
                         }
-                        console.log('Balanced Route displayed...')
+                        setIsLoading(false)
+                        console.log('Balanced Route Displayed...')
                         break
 
                     case 'emission':
-                        console.log('Emission Path...')
-                        ;({ geojson, routes } = await getLeastCarbonRoute(
-                            source,
-                            destination,
-                            temp_mode
-                        ))
+                        // Always the Graphhopper Route
+                        console.log('Least Emission Path...')
 
-                        setDistance(routes[0].distance)
+                        // Getting the lco2 route
+                        body = {
+                            source: source.position,
+                            destination: destination.position,
+                            delayCode: delayCode,
+                            mode: mode,
+                            route_preference: 'emission',
+                        }
 
-                        // estimating the time for leap route
-                        temp_routes.sort((a, b) => a.distance - b.distance) //shorting based on distance
-                        shortestRouteTime = temp_routes[0].time
-                        shortestRouteDistance = temp_routes[0].distance
+                        requestOptions = {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify(body),
+                        }
 
-                        routes[0].time =
-                            (routes[0].distance / shortestRouteDistance) *
-                            shortestRouteTime
+                        response = await fetch(
+                            process.env.REACT_APP_SERVER_URL + 'route',
+                            requestOptions
+                        )
+                        route = await response.json()
 
-                        setTime(routes[0].time)
-                        setInstructions(routes[0].instructions)
-                        setExposure(routes[0].totalExposure)
-                        //removing all the other routes
+                        geojson = getGeojson(route)
+                        setDistance(route.distance)
+                        setTime(route.time)
+                        setInstructions(route.instructions)
+                        setExposure(route.total_exposure)
+                        setLeastCarbonRoute(route)
+
+                        // display this map
+                        // removing all the layers and sources from the map before adding the shortest route
+                        // we can also make the visibility property - 'none'
                         layers = window.$map.getStyle().layers
-                        console.log({ layers })
                         for (let i = 0; i < layers.length; i++) {
                             if (layers[i].id.includes('-route')) {
                                 window.$map.removeLayer(layers[i].id)
@@ -744,24 +808,22 @@ export default function MapDrawer() {
                             }
                         }
 
-                        routeId = `${temp_mode}-${temp_routePreference}-${start.position[0]}-${start.position[1]}-${end.position[0]}-${end.position[1]}-route`
-                        //if same route is present - then we modify its source
+                        routeId = `${mode}-${routePreference}-${start.position[0]}-${start.position[1]}-${end.position[0]}-${end.position[1]}-route`
                         if (window.$map.getSource(routeId)) {
                             window.$map.getSource(routeId).setData(geojson)
-                            setLeastCarbonRoute(routes[0])
+
                             setIsLoading(false)
                         } else {
+                            // This is how we define the id of the route.
                             displayRoute(
                                 geojson,
                                 start,
                                 end,
                                 routeId,
-                                'emission'
+                                'shortest'
                             )
-                            setLeastCarbonRoute(routes[0])
                             setIsLoading(false)
                         }
-                        console.log('Least Carbon Emission Route displayed...')
                         break
                 }
             } catch (e) {
@@ -954,7 +1016,7 @@ export default function MapDrawer() {
                                 )}
                             </div>
                             <select
-                                className="select select-sm select-bordered w-full max-w-xs"
+                                className="select select-sm select-bordered w-full max-w-xs text-center"
                                 required
                                 value={mode}
                                 onChange={(e) => {
@@ -962,15 +1024,49 @@ export default function MapDrawer() {
                                     console.log(e.target.value)
                                 }}
                             >
-                                <option disabled value="none" selected>
+                                <option
+                                    disabled
+                                    value=""
+                                    selected
+                                    className="text-center"
+                                >
                                     -- Select Mode of Transport --
                                 </option>
                                 <option value="driving-traffic">Car</option>
                                 {/* <option value="truck">Bus</option> */}
                                 {/* <option value="car">Car - Driving</option> */}
                                 <option value="scooter">Motorbike</option>
-                                <option value="bike">Cycling</option>
-                                <option value="foot">Walking</option>
+                                {/* <option value="bike">Cycling</option>
+                                <option value="foot">Walking</option> */}
+                            </select>
+
+                            <select
+                                className="select select-sm select-bordered w-full max-w-xs"
+                                required
+                                value={delayCode}
+                                onChange={(e) => {
+                                    setDelayCode(e.target.value)
+                                    console.log(e.target.value)
+                                }}
+                            >
+                                <option
+                                    disabled
+                                    value="none"
+                                    selected
+                                    className="text-center"
+                                >
+                                    -- Depart at --
+                                </option>
+                                <option value="0"> Now </option>
+                                <option value="1">+ 30 mins</option>
+                                <option value="2">+ 1 hrs</option>
+                                <option value="3">+ 1.5 hrs</option>
+                                <option value="4">+ 2 hrs</option>
+                                <option value="5">+ 2.5 hrs</option>
+                                <option value="6">+ 3 hrs</option>
+                                <option value="7">+ 4 hrs</option>
+                                <option value="8">+ 5 hrs</option>
+                                <option value="9">+ 6 hrs</option>
                             </select>
 
                             <div className="flex flex-row justify-evenly items-center">
@@ -983,7 +1079,7 @@ export default function MapDrawer() {
                                         console.log(e.target.value)
                                     }}
                                 >
-                                    <option disabled value="none">
+                                    <option disabled value="">
                                         -- Select Route Preference --
                                     </option>
                                     <option value="shortest">
@@ -1003,6 +1099,7 @@ export default function MapDrawer() {
                                     </option>
                                     <option value="all">All</option>
                                 </select>
+
                                 <div className="ml-2">
                                     <svg
                                         xmlns="http://www.w3.org/2000/svg"
@@ -1087,8 +1184,6 @@ export default function MapDrawer() {
                                 <span className="text-green-400">
                                     {isLoading
                                         ? prettyMilliseconds(0)
-                                        : mode.includes('traffic') //we have an error here...
-                                        ? prettyMilliseconds(time * 1000)
                                         : prettyMilliseconds(time)}{' '}
                                 </span>
                                 <span className="text-gray-500">|</span>{' '}
@@ -1120,7 +1215,6 @@ export default function MapDrawer() {
                                                                     instruction={
                                                                         instruction
                                                                     }
-                                                                    mode={mode}
                                                                 />
                                                             </li>
                                                         )
@@ -1179,26 +1273,26 @@ export default function MapDrawer() {
                                                 <li>
                                                     Distance:{' '}
                                                     {prettyMetric(
-                                                        shortestRoute.distance
+                                                        shortestRoute?.distance
                                                     ).humanize()}
                                                 </li>
                                                 <li>
                                                     Time Taken:{' '}
-                                                    {shortestRoute.time &&
+                                                    {(shortestRoute?.time || shortestRoute?.duration)&&
                                                         prettyMilliseconds(
-                                                            shortestRoute.time
+                                                            shortestRoute?.time || shortestRoute?.duration
                                                         )}
                                                 </li>
                                                 <li>
                                                     Total Exposure:{' '}
-                                                    {shortestRoute.totalExposure?.toFixed(
+                                                    {shortestRoute?.total_exposure?.toFixed(
                                                         2
                                                     )}{' '}
                                                     µg/㎥
                                                 </li>
                                                 <li>
                                                     Energy Required:{' '}
-                                                    {shortestRoute.totalEnergy?.toFixed(
+                                                    {shortestRoute?.total_energy?.toFixed(
                                                         2
                                                     )}{' '}
                                                     kJ
@@ -1217,29 +1311,28 @@ export default function MapDrawer() {
                                                 <li>
                                                     Distance:{' '}
                                                     {prettyMetric(
-                                                        fastestRoute.distance
+                                                        fastestRoute?.distance
                                                     ).humanize()}
                                                 </li>
                                                 <li>
                                                     Time Taken:{' '}
-                                                    {(fastestRoute.duration ||
-                                                        fastestRoute.time) &&
+                                                    {(fastestRoute?.duration ||
+                                                        fastestRoute?.time) &&
                                                         prettyMilliseconds(
-                                                            fastestRoute.duration *
-                                                                1000 ||
-                                                                fastestRoute.time
+                                                            fastestRoute?.duration ||
+                                                                fastestRoute?.time
                                                         )}
                                                 </li>
                                                 <li>
                                                     Total Exposure:{' '}
-                                                    {fastestRoute.totalExposure?.toFixed(
+                                                    {fastestRoute?.total_exposure?.toFixed(
                                                         2
                                                     )}{' '}
                                                     µg/㎥
                                                 </li>
                                                 <li>
                                                     Energy Required:{' '}
-                                                    {fastestRoute.totalEnergy?.toFixed(
+                                                    {fastestRoute?.total_energy?.toFixed(
                                                         2
                                                     )}{' '}
                                                     kJ
@@ -1258,26 +1351,26 @@ export default function MapDrawer() {
                                                 <li>
                                                     Distance:{' '}
                                                     {prettyMetric(
-                                                        leapRoute.distance
+                                                        leapRoute?.distance
                                                     ).humanize()}
                                                 </li>
                                                 <li>
                                                     Time Taken:{' '}
-                                                    {leapRoute.time &&
+                                                    {leapRoute?.time &&
                                                         prettyMilliseconds(
-                                                            leapRoute.time
+                                                            leapRoute?.time
                                                         )}
                                                 </li>
                                                 <li>
                                                     Total Exposure:{' '}
-                                                    {leapRoute.totalExposure?.toFixed(
+                                                    {leapRoute?.total_exposure?.toFixed(
                                                         2
                                                     )}{' '}
                                                     µg/㎥
                                                 </li>
                                                 <li>
                                                     Energy Required:{' '}
-                                                    {leapRoute.totalEnergy?.toFixed(
+                                                    {leapRoute?.total_energy?.toFixed(
                                                         2
                                                     )}{' '}
                                                     kJ
@@ -1297,27 +1390,27 @@ export default function MapDrawer() {
                                                 <li>
                                                     Distance:{' '}
                                                     {prettyMetric(
-                                                        leastCarbonRoute.distance
+                                                        leastCarbonRoute?.distance
                                                     ).humanize()}
                                                 </li>
                                                 <li>
                                                     Time Taken:{' '}
-                                                    {leastCarbonRoute.time &&
+                                                    {leastCarbonRoute?.time &&
                                                         prettyMilliseconds(
-                                                            leastCarbonRoute.time ??
+                                                            leastCarbonRoute?.time ??
                                                                 1
                                                         )}
                                                 </li>
                                                 <li>
                                                     Total Exposure:{' '}
-                                                    {leastCarbonRoute.totalExposure?.toFixed(
+                                                    {leastCarbonRoute?.total_exposure?.toFixed(
                                                         2
                                                     )}{' '}
                                                     µg/㎥
                                                 </li>
                                                 <li>
                                                     Energy Required:{' '}
-                                                    {leastCarbonRoute?.totalEnergy?.toFixed(
+                                                    {leastCarbonRoute?.total_energy?.toFixed(
                                                         2
                                                     )}{' '}
                                                     kJ
@@ -1337,29 +1430,28 @@ export default function MapDrawer() {
                                                 <li>
                                                     Distance:{' '}
                                                     {prettyMetric(
-                                                        balancedRoute.distance
+                                                        balancedRoute?.distance
                                                     ).humanize()}
                                                 </li>
                                                 <li>
                                                     Time Taken:{' '}
-                                                    {(balancedRoute.time ??
-                                                        balancedRoute.duration) &&
+                                                    {(balancedRoute?.time ??
+                                                        balancedRoute?.duration) &&
                                                         prettyMilliseconds(
-                                                            balancedRoute.time ??
-                                                                balancedRoute.duration *
-                                                                    1000
+                                                            balancedRoute?.time ??
+                                                                balancedRoute?.duration
                                                         )}
                                                 </li>
                                                 <li>
                                                     Total Exposure:{' '}
-                                                    {balancedRoute.totalExposure?.toFixed(
+                                                    {balancedRoute?.total_exposure?.toFixed(
                                                         2
                                                     )}{' '}
                                                     µg/㎥
                                                 </li>
                                                 <li>
                                                     Energy Required:{' '}
-                                                    {balancedRoute.totalEnergy?.toFixed(
+                                                    {balancedRoute?.total_energy?.toFixed(
                                                         2
                                                     )}{' '}
                                                     kJ
@@ -1378,35 +1470,35 @@ export default function MapDrawer() {
                                             <li>
                                                 Distance:{' '}
                                                 {prettyMetric(
-                                                    shortestRoute.distance
+                                                    shortestRoute?.distance
                                                 ).humanize()}
                                             </li>
                                         ) : routePreference == 'fastest' ? (
                                             <li>
                                                 Distance:{' '}
                                                 {prettyMetric(
-                                                    fastestRoute.distance
+                                                    fastestRoute?.distance
                                                 ).humanize()}
                                             </li>
                                         ) : routePreference == 'leap' ? (
                                             <li>
                                                 Distance:{' '}
                                                 {prettyMetric(
-                                                    leapRoute.distance
+                                                    leapRoute?.distance
                                                 ).humanize()}
                                             </li>
                                         ) : routePreference == 'emission' ? (
                                             <li>
                                                 Distance:{' '}
                                                 {prettyMetric(
-                                                    leastCarbonRoute.distance
+                                                    leastCarbonRoute?.distance
                                                 ).humanize()}
                                             </li>
                                         ) : routePreference == 'balanced' ? (
                                             <li>
                                                 Distance:{' '}
                                                 {prettyMetric(
-                                                    balancedRoute.distance
+                                                    balancedRoute?.distance
                                                 ).humanize()}
                                             </li>
                                         ) : (
@@ -1417,49 +1509,47 @@ export default function MapDrawer() {
                                         {routePreference == 'shortest' ? (
                                             <li>
                                                 Time Taken:{' '}
-                                                {shortestRoute.time &&
+                                                {(shortestRoute?.time || shortestRoute?.duration) &&
                                                     prettyMilliseconds(
-                                                        shortestRoute.time
+                                                        shortestRoute?.time || shortestRoute?.duration
                                                     )}
                                             </li>
                                         ) : routePreference == 'fastest' ? (
                                             <li>
                                                 Time Taken:{' '}
-                                                {fastestRoute.duration &&
+                                                {(fastestRoute?.duration || fastestRoute?.time) &&
                                                     prettyMilliseconds(
-                                                        fastestRoute.duration *
-                                                            1000
+                                                        fastestRoute?.duration || fastestRoute?.time
                                                     )}
                                             </li>
                                         ) : routePreference == 'leap' ? (
                                             <li>
                                                 Time Taken:{' '}
-                                                {leapRoute.time &&
+                                                {leapRoute?.time &&
                                                     prettyMilliseconds(
-                                                        leapRoute.time ??
-                                                            leapRoute.duration *
+                                                        leapRoute?.time ??
+                                                            leapRoute?.duration *
                                                                 1000
                                                     )}
                                             </li>
                                         ) : routePreference == 'emission' ? (
                                             <li>
                                                 Time Taken:{' '}
-                                                {leastCarbonRoute.time &&
+                                                {leastCarbonRoute?.time &&
                                                     prettyMilliseconds(
-                                                        leastCarbonRoute.time ??
-                                                            leastCarbonRoute.duration *
+                                                        leastCarbonRoute?.time ??
+                                                            leastCarbonRoute?.duration *
                                                                 1000
                                                     )}
                                             </li>
                                         ) : routePreference == 'balanced' ? (
                                             <li>
                                                 Time Taken:{' '}
-                                                {(balancedRoute.duration ??
-                                                    balancedRoute.time) &&
+                                                {(balancedRoute?.duration ??
+                                                    balancedRoute?.time) &&
                                                     prettyMilliseconds(
-                                                        balancedRoute.duration *
-                                                            1000 ??
-                                                            balancedRoute.time
+                                                        balancedRoute?.duration ??
+                                                            balancedRoute?.time
                                                     )}
                                             </li>
                                         ) : (
@@ -1472,7 +1562,7 @@ export default function MapDrawer() {
                                         {routePreference == 'leap' ? (
                                             <li>
                                                 Exposure:{' '}
-                                                {leapRoute.totalExposure?.toFixed(
+                                                {leapRoute?.total_exposure?.toFixed(
                                                     2
                                                 )}{' '}
                                                 µg/㎥
@@ -1480,7 +1570,7 @@ export default function MapDrawer() {
                                         ) : routePreference == 'balanced' ? (
                                             <li>
                                                 Exposure:{' '}
-                                                {balancedRoute.totalExposure?.toFixed(
+                                                {balancedRoute?.total_exposure?.toFixed(
                                                     2
                                                 )}{' '}
                                                 µg/㎥
@@ -1488,7 +1578,7 @@ export default function MapDrawer() {
                                         ) : routePreference == 'shortest' ? (
                                             <li>
                                                 Exposure:{' '}
-                                                {shortestRoute.totalExposure?.toFixed(
+                                                {shortestRoute?.total_exposure?.toFixed(
                                                     2
                                                 )}{' '}
                                                 µg/㎥
@@ -1496,7 +1586,7 @@ export default function MapDrawer() {
                                         ) : routePreference == 'fastest' ? (
                                             <li>
                                                 Exposure:{' '}
-                                                {fastestRoute.totalExposure?.toFixed(
+                                                {fastestRoute?.total_exposure?.toFixed(
                                                     2
                                                 )}{' '}
                                                 µg/㎥
@@ -1504,7 +1594,7 @@ export default function MapDrawer() {
                                         ) : routePreference == 'emission' ? (
                                             <li>
                                                 Exposure:{' '}
-                                                {leastCarbonRoute.totalExposure?.toFixed(
+                                                {leastCarbonRoute?.total_exposure?.toFixed(
                                                     2
                                                 )}{' '}
                                                 µg/㎥
@@ -1520,7 +1610,7 @@ export default function MapDrawer() {
                                             <li>
                                                 Energy Required:{' '}
                                                 {leapRoute &&
-                                                    leapRoute.totalEnergy?.toFixed(
+                                                    leapRoute?.total_energy?.toFixed(
                                                         2
                                                     )}{' '}
                                                 kJ
@@ -1529,7 +1619,7 @@ export default function MapDrawer() {
                                             <li>
                                                 Energy Required:{' '}
                                                 {balancedRoute &&
-                                                    balancedRoute.totalEnergy?.toFixed(
+                                                    balancedRoute?.total_energy?.toFixed(
                                                         2
                                                     )}{' '}
                                                 kJ
@@ -1538,7 +1628,7 @@ export default function MapDrawer() {
                                             <li>
                                                 Energy Required:{' '}
                                                 {shortestRoute &&
-                                                    shortestRoute.totalEnergy?.toFixed(
+                                                    shortestRoute?.total_energy?.toFixed(
                                                         2
                                                     )}{' '}
                                                 kJ
@@ -1547,7 +1637,7 @@ export default function MapDrawer() {
                                             <li>
                                                 Energy Required:{' '}
                                                 {fastestRoute &&
-                                                    fastestRoute.totalEnergy?.toFixed(
+                                                    fastestRoute?.total_energy?.toFixed(
                                                         2
                                                     )}{' '}
                                                 kJ
@@ -1556,7 +1646,7 @@ export default function MapDrawer() {
                                             <li>
                                                 Energy Required:{' '}
                                                 {leastCarbonRoute &&
-                                                    leastCarbonRoute.totalEnergy?.toFixed(
+                                                    leastCarbonRoute?.total_energy?.toFixed(
                                                         2
                                                     )}{' '}
                                                 kJ
@@ -1565,16 +1655,6 @@ export default function MapDrawer() {
                                             <li>
                                                 Energy Required:{' '}
                                                 {`No Route Selected`}{' '}
-                                            </li>
-                                        )}
-
-                                        {routePreference == 'emission' && (
-                                            <li>
-                                                Energy Required:{' '}
-                                                {leastCarbonRoute.totalEnergy?.toFixed(
-                                                    2
-                                                )}{' '}
-                                                kJ
                                             </li>
                                         )}
                                     </ul>
