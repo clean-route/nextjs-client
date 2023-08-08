@@ -4,11 +4,6 @@ import prettyMilliseconds from 'pretty-ms'
 import Instruction from './Instruction.js'
 import getRouteColor from '../utils/getRouteColor.js'
 import getIconFromMode from '../utils/getIconFromMode.js'
-import getShortestRoute from '../controllers/getShortestRoute.js'
-import getFastestRoute from '../controllers/getFastestRoute.js'
-import getLeapRoute from '../controllers/getLeapRoute.js'
-import getBalancedRoute from '../controllers/getBalancedRoute.js'
-import getLeastCarbonRoute from '../controllers/getLeastCarbonRoute.js'
 const prettyMetric = require('pretty-metric')
 const mapboxgl = require('mapbox-gl/dist/mapbox-gl.js')
 import getGeojson from '../utils/getGeojson'
@@ -252,11 +247,8 @@ export default function MapDrawer() {
 
     async function getAllRoutes(start, end) {
         //Handle the all routes cases - default case
-        //display the shortest route in the given mode
 
         console.log('Inside getAllRoutes...')
-        // let temp_mode = mode
-        // let temp_routePreference = routePreference //intially - all
 
         // removing all the other routes
         let layers = window.$map.getStyle().layers
@@ -278,6 +270,7 @@ export default function MapDrawer() {
             mode: mode,
             route_preference: routePreference,
         }
+
         console.log("request body: ", body)
 
         const requestOptions = {
@@ -380,84 +373,13 @@ export default function MapDrawer() {
             try {
                 console.log('Before query...')
 
-                // let temp_mode = mode
-                // let temp_routePreference = routePreference
-
-                // //modifies the mode and routePreference
-                // function adjustModeRoutePreference(temp_routePreference) {
-                //     if (temp_routePreference == 'balanced') {
-                //         // if (temp_mode == 'car') {
-                //         //     setMode('driving-traffic')
-                //         //     temp_mode = 'driving-traffic'
-                //         // }
-                //         // else if (temp_mode == 'truck') {
-                //         //     setMode('truck-traffic')
-                //         //     temp_mode = 'truck-traffic'
-                //         // }
-                //     } else if (temp_routePreference == 'leap') {
-                //         if (temp_mode == 'driving-traffic') {
-                //             setMode('car') // not considering traffic in finding the leap path.
-                //             temp_mode = 'car'
-                //         }
-                //         // else if (temp_mode == 'truck-traffic') {
-                //         //     setMode('truck')
-                //         //     temp_mode = 'truck'
-                //         // }
-                //     } else if (temp_routePreference == 'shortest') {
-                //         if (temp_mode == 'truck-traffic') {
-                //             // setMode('truck')
-                //             // temp_mode = 'truck'
-                //         } else if (temp_mode == 'driving-traffic') {
-                //             // setMode('car')
-                //             // temp_mode = 'car'
-                //         }
-                //     } else if (temp_routePreference == 'fastest') {
-                //         if (temp_mode == 'truck') {
-                //             // setMode('truck-traffic')
-                //             // temp_mode = 'driving-traffic'
-                //         } else if (temp_mode == 'car') {
-                //             setMode('driving-traffic')
-                //             temp_mode = 'driving-traffic'
-                //         }
-                //     } else if (temp_routePreference == 'emission') {
-                //         if (temp_mode == 'driving-traffic') {
-                //             setMode('car') // not considering traffic in LPER also.
-                //             temp_mode = 'car'
-                //         }
-                //     }
-                // }
-
-                // // adjusting the mode and routePreference
-                // adjustModeRoutePreference(temp_routePreference)
-
-                // console.log({ mode, routePreference })
-                // console.log({ temp_mode, temp_routePreference })
-
-                // let routes
-                // if (temp_mode == 'driving-traffic') {
-                //     routes = await getMapboxRoutes()
-                //     console.log('Route from Mapbox: ', routes)
-                // } else {
-                //     routes = await getGraphhopperRoutes(temp_mode)
-                //     console.log('Route from Graphhoperr: ', routes)
-                // }
-                // console.log({ routes })
-                // const geojson = {
-                //     type: 'Feature',
-                //     properties: {},
-                //     geometry: {
-                //         type: 'LineString',
-                //         coordinates: '',
-                //     },
-                // }
-
                 let geojson
                 let layers
                 let routeId = `${mode}-${routePreference}-${start.position[0]}-${start.position[1]}-${end.position[0]}-${end.position[1]}-route`
                 let body, requestOptions, response, route
                 // let temp_routes = routes
                 // let shortestRouteTime
-                // let shortestRouteDistance
+
                 switch (routePreference) {
                     case 'shortest':
                         // Always the Graphhopper Route
@@ -654,50 +576,50 @@ export default function MapDrawer() {
                         setIsLoading(false)
                         break
 
-                        console.log('LEAP Path...') //get the routes from the graphhopper api  ✅
+                        // console.log('LEAP Path...') //get the routes from the graphhopper api  ✅
 
-                        //ignoring the traffic in case of the greenest route.
-                        ;({ geojson, routes } = await getLeapRoute(
-                            routes,
-                            temp_mode
-                        ))
+                        // //ignoring the traffic in case of the greenest route.
+                        // ;({ geojson, routes } = await getLeapRoute(
+                        //     routes,
+                        //     temp_mode
+                        // ))
 
-                        setDistance(routes[0].distance)
+                        // setDistance(routes[0].distance)
 
-                        // estimating the time for leap route
-                        temp_routes.sort((a, b) => a.distance - b.distance) //shorting based on distance
-                        shortestRouteTime = temp_routes[0].time
-                        shortestRouteDistance = temp_routes[0].distance
+                        // // estimating the time for leap route
+                        // temp_routes.sort((a, b) => a.distance - b.distance) //shorting based on distance
+                        // shortestRouteTime = temp_routes[0].time
+                        // shortestRouteDistance = temp_routes[0].distance
 
-                        routes[0].time =
-                            (routes[0].distance / shortestRouteDistance) *
-                            shortestRouteTime
-                        setTime(routes[0].time)
-                        setInstructions(routes[0].instructions)
+                        // routes[0].time =
+                        //     (routes[0].distance / shortestRouteDistance) *
+                        //     shortestRouteTime
+                        // setTime(routes[0].time)
+                        // setInstructions(routes[0].instructions)
 
-                        //removing all the other routes
-                        layers = window.$map.getStyle().layers
-                        console.log({ layers })
-                        for (let i = 0; i < layers.length; i++) {
-                            if (layers[i].id.includes('-route')) {
-                                window.$map.removeLayer(layers[i].id)
-                                window.$map.removeSource(layers[i].id)
-                            }
-                        }
-                        setExposure(routes[0].total_exposure)
-                        routeId = `${temp_mode}-${temp_routePreference}-${start.position[0]}-${start.position[1]}-${end.position[0]}-${end.position[1]}-route`
-                        //if same route is present - then we modify its source
-                        if (window.$map.getSource(routeId)) {
-                            window.$map.getSource(routeId).setData(geojson)
-                            setLeapRoute(routes[0])
-                            setIsLoading(false)
-                        } else {
-                            displayRoute(geojson, start, end, routeId, 'leap')
-                            setLeapRoute(routes[0])
-                            setIsLoading(false)
-                        }
-                        console.log('Leap Route displayed...')
-                        break
+                        // //removing all the other routes
+                        // layers = window.$map.getStyle().layers
+                        // console.log({ layers })
+                        // for (let i = 0; i < layers.length; i++) {
+                        //     if (layers[i].id.includes('-route')) {
+                        //         window.$map.removeLayer(layers[i].id)
+                        //         window.$map.removeSource(layers[i].id)
+                        //     }
+                        // }
+                        // setExposure(routes[0].total_exposure)
+                        // routeId = `${temp_mode}-${temp_routePreference}-${start.position[0]}-${start.position[1]}-${end.position[0]}-${end.position[1]}-route`
+                        // //if same route is present - then we modify its source
+                        // if (window.$map.getSource(routeId)) {
+                        //     window.$map.getSource(routeId).setData(geojson)
+                        //     setLeapRoute(routes[0])
+                        //     setIsLoading(false)
+                        // } else {
+                        //     displayRoute(geojson, start, end, routeId, 'leap')
+                        //     setLeapRoute(routes[0])
+                        //     setIsLoading(false)
+                        // }
+                        // console.log('Leap Route displayed...')
+                        // break
 
                     case 'balanced':
                         // Similar to Fastest Path: Mapbox / Graphhopper
