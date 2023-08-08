@@ -274,10 +274,11 @@ export default function MapDrawer() {
         const body = {
             source: source.position,
             destination: destination.position,
-            delayCode: delayCode,
+            delayCode: parseInt(delayCode),
             mode: mode,
             route_preference: routePreference,
         }
+        console.log("request body: ", body)
 
         const requestOptions = {
             method: 'POST',
@@ -466,10 +467,11 @@ export default function MapDrawer() {
                         body = {
                             source: source.position,
                             destination: destination.position,
-                            delayCode: delayCode,
+                            delayCode: parseInt(delayCode),
                             mode: mode,
                             route_preference: 'shortest',
                         }
+                        console.log("request body: ", body)
 
                         requestOptions = {
                             method: 'POST',
@@ -530,7 +532,7 @@ export default function MapDrawer() {
                         body = {
                             source: source.position,
                             destination: destination.position,
-                            delayCode: delayCode,
+                            delayCode: parseInt(delayCode),
                             mode: mode,
                             route_preference: 'fastest',
                         }
@@ -596,7 +598,7 @@ export default function MapDrawer() {
                         body = {
                             source: source.position,
                             destination: destination.position,
-                            delayCode: delayCode,
+                            delayCode: parseInt(delayCode),
                             mode: mode,
                             route_preference: 'leap',
                         }
@@ -704,7 +706,7 @@ export default function MapDrawer() {
                         body = {
                             source: source.position,
                             destination: destination.position,
-                            delayCode: delayCode,
+                            delayCode: parseInt(delayCode),
                             mode: mode,
                             route_preference: 'balanced',
                         }
@@ -771,7 +773,7 @@ export default function MapDrawer() {
                         body = {
                             source: source.position,
                             destination: destination.position,
-                            delayCode: delayCode,
+                            delayCode: parseInt(delayCode),
                             mode: mode,
                             route_preference: 'emission',
                         }
@@ -1058,15 +1060,12 @@ export default function MapDrawer() {
                                     -- Depart at --
                                 </option>
                                 <option value="0"> Now </option>
-                                <option value="1">+ 30 mins</option>
-                                <option value="2">+ 1 hrs</option>
-                                <option value="3">+ 1.5 hrs</option>
-                                <option value="4">+ 2 hrs</option>
-                                <option value="5">+ 2.5 hrs</option>
-                                <option value="6">+ 3 hrs</option>
-                                <option value="7">+ 4 hrs</option>
-                                <option value="8">+ 5 hrs</option>
-                                <option value="9">+ 6 hrs</option>
+                                <option value="1">+ 1 hrs</option>
+                                <option value="2">+ 2 hrs</option>
+                                <option value="3">+ 3 hrs</option>
+                                <option value="4">+ 4 hrs</option>
+                                <option value="5">+ 5 hrs</option>
+                                <option value="6">+ 6 hrs</option>
                             </select>
 
                             <div className="flex flex-row justify-evenly items-center">
