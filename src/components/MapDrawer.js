@@ -279,7 +279,7 @@ export default function MapDrawer() {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify(body),
-            referrerPolicy: "unsafe-url" 
+            
         }
 
         const response = await fetch(
@@ -402,7 +402,6 @@ export default function MapDrawer() {
                                 'Content-Type': 'application/json',
                             },
                             body: JSON.stringify(body),
-                            referrerPolicy: "unsafe-url" 
                         }
 
                         response = await fetch(
@@ -467,7 +466,6 @@ export default function MapDrawer() {
                                 'Content-Type': 'application/json',
                             },
                             body: JSON.stringify(body),
-                            referrerPolicy: "unsafe-url" 
                         }
 
                         response = await fetch(
@@ -534,7 +532,6 @@ export default function MapDrawer() {
                                 'Content-Type': 'application/json',
                             },
                             body: JSON.stringify(body),
-                            referrerPolicy: "unsafe-url" 
                         }
 
                         response = await fetch(
@@ -643,7 +640,6 @@ export default function MapDrawer() {
                                 'Content-Type': 'application/json',
                             },
                             body: JSON.stringify(body),
-                            referrerPolicy: "unsafe-url" 
                         }
 
                         response = await fetch(
@@ -711,7 +707,6 @@ export default function MapDrawer() {
                                 'Content-Type': 'application/json',
                             },
                             body: JSON.stringify(body),
-                            referrerPolicy: "unsafe-url" 
                         }
 
                         response = await fetch(
