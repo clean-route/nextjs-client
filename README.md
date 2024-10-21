@@ -1,6 +1,6 @@
 ## Clean Route: Web Tool for LEAP route prediction. 
 
->> Please use GITBASH for as Terminal for typing your commands. 
+>> Please use bash/zsh shells for typing commands. Windows users please use GitBash for this purpose. 
 
 ### IMPORTANT
 Before you begin with frontend setup: Make sure you've completed the backend setup and the server is up and running.
