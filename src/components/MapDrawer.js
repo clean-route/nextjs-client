@@ -24,6 +24,8 @@ export default function MapDrawer() {
     const [time, setTime] = useState(0)
     const [exposure, setExposure] = useState(0)
     const [instructions, setInstructions] = useState([])
+    const [vehicleMileage, setVehicleMileage] = useState('');
+    const [vehicleCondition, setVehicleCondition] = useState(null);
 
     // Type of Routes
     const [shortestRoute, setShortestRoute] = useState({})
@@ -269,6 +271,8 @@ export default function MapDrawer() {
             delayCode: parseInt(delayCode),
             mode: mode,
             route_preference: routePreference,
+            mileage: vehicleMileage,
+            condition: vehicleCondition
         }
 
         console.log("request body: ", body)
@@ -279,7 +283,7 @@ export default function MapDrawer() {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify(body),
-            
+
         }
 
         const response = await fetch(
@@ -367,9 +371,9 @@ export default function MapDrawer() {
         if (start != '' && end != '') {
             console.log(
                 'Running getRoutes... with mode: ' +
-                    mode +
-                    ' and routePreference: ' +
-                    routePreference
+                mode +
+                ' and routePreference: ' +
+                routePreference
             )
             try {
                 console.log('Before query...')
@@ -393,6 +397,8 @@ export default function MapDrawer() {
                             delayCode: parseInt(delayCode),
                             mode: mode,
                             route_preference: 'shortest',
+                            mileage: vehicleMileage,
+                            condition: vehicleCondition
                         }
                         console.log("request body: ", body)
 
@@ -458,6 +464,8 @@ export default function MapDrawer() {
                             delayCode: parseInt(delayCode),
                             mode: mode,
                             route_preference: 'fastest',
+                            mileage: vehicleMileage,
+                            condition: vehicleCondition
                         }
 
                         requestOptions = {
@@ -524,6 +532,8 @@ export default function MapDrawer() {
                             delayCode: parseInt(delayCode),
                             mode: mode,
                             route_preference: 'leap',
+                            mileage: vehicleMileage,
+                            condition: vehicleCondition
                         }
 
                         requestOptions = {
@@ -577,50 +587,50 @@ export default function MapDrawer() {
                         setIsLoading(false)
                         break
 
-                        // console.log('LEAP Path...') //get the routes from the graphhopper api  ✅
+                    // console.log('LEAP Path...') //get the routes from the graphhopper api  ✅
 
-                        // //ignoring the traffic in case of the greenest route.
-                        // ;({ geojson, routes } = await getLeapRoute(
-                        //     routes,
-                        //     temp_mode
-                        // ))
+                    // //ignoring the traffic in case of the greenest route.
+                    // ;({ geojson, routes } = await getLeapRoute(
+                    //     routes,
+                    //     temp_mode
+                    // ))
 
-                        // setDistance(routes[0].distance)
+                    // setDistance(routes[0].distance)
 
-                        // // estimating the time for leap route
-                        // temp_routes.sort((a, b) => a.distance - b.distance) //shorting based on distance
-                        // shortestRouteTime = temp_routes[0].time
-                        // shortestRouteDistance = temp_routes[0].distance
+                    // // estimating the time for leap route
+                    // temp_routes.sort((a, b) => a.distance - b.distance) //shorting based on distance
+                    // shortestRouteTime = temp_routes[0].time
+                    // shortestRouteDistance = temp_routes[0].distance
 
-                        // routes[0].time =
-                        //     (routes[0].distance / shortestRouteDistance) *
-                        //     shortestRouteTime
-                        // setTime(routes[0].time)
-                        // setInstructions(routes[0].instructions)
+                    // routes[0].time =
+                    //     (routes[0].distance / shortestRouteDistance) *
+                    //     shortestRouteTime
+                    // setTime(routes[0].time)
+                    // setInstructions(routes[0].instructions)
 
-                        // //removing all the other routes
-                        // layers = window.$map.getStyle().layers
-                        // console.log({ layers })
-                        // for (let i = 0; i < layers.length; i++) {
-                        //     if (layers[i].id.includes('-route')) {
-                        //         window.$map.removeLayer(layers[i].id)
-                        //         window.$map.removeSource(layers[i].id)
-                        //     }
-                        // }
-                        // setExposure(routes[0].total_exposure)
-                        // routeId = `${temp_mode}-${temp_routePreference}-${start.position[0]}-${start.position[1]}-${end.position[0]}-${end.position[1]}-route`
-                        // //if same route is present - then we modify its source
-                        // if (window.$map.getSource(routeId)) {
-                        //     window.$map.getSource(routeId).setData(geojson)
-                        //     setLeapRoute(routes[0])
-                        //     setIsLoading(false)
-                        // } else {
-                        //     displayRoute(geojson, start, end, routeId, 'leap')
-                        //     setLeapRoute(routes[0])
-                        //     setIsLoading(false)
-                        // }
-                        // console.log('Leap Route displayed...')
-                        // break
+                    // //removing all the other routes
+                    // layers = window.$map.getStyle().layers
+                    // console.log({ layers })
+                    // for (let i = 0; i < layers.length; i++) {
+                    //     if (layers[i].id.includes('-route')) {
+                    //         window.$map.removeLayer(layers[i].id)
+                    //         window.$map.removeSource(layers[i].id)
+                    //     }
+                    // }
+                    // setExposure(routes[0].total_exposure)
+                    // routeId = `${temp_mode}-${temp_routePreference}-${start.position[0]}-${start.position[1]}-${end.position[0]}-${end.position[1]}-route`
+                    // //if same route is present - then we modify its source
+                    // if (window.$map.getSource(routeId)) {
+                    //     window.$map.getSource(routeId).setData(geojson)
+                    //     setLeapRoute(routes[0])
+                    //     setIsLoading(false)
+                    // } else {
+                    //     displayRoute(geojson, start, end, routeId, 'leap')
+                    //     setLeapRoute(routes[0])
+                    //     setIsLoading(false)
+                    // }
+                    // console.log('Leap Route displayed...')
+                    // break
 
                     case 'balanced':
                         // Similar to Fastest Path: Mapbox / Graphhopper
@@ -632,6 +642,8 @@ export default function MapDrawer() {
                             delayCode: parseInt(delayCode),
                             mode: mode,
                             route_preference: 'balanced',
+                            mileage: vehicleMileage,
+                            condition: vehicleCondition
                         }
 
                         requestOptions = {
@@ -699,6 +711,8 @@ export default function MapDrawer() {
                             delayCode: parseInt(delayCode),
                             mode: mode,
                             route_preference: 'emission',
+                            mileage: vehicleMileage,
+                            condition: vehicleCondition
                         }
 
                         requestOptions = {
@@ -824,6 +838,33 @@ export default function MapDrawer() {
                     </h1>
                     <form>
                         <div className="flex flex-col space-y-3 items-center">
+
+                            {/* 👇 New Input: Vehicle Mileage */}
+                            
+                            <input
+                                type="number"
+                                placeholder="Enter Vehicle Mileage"
+                                className="input input-sm input-bordered mt-0 w-full max-w-xs"
+                                value={vehicleMileage}
+                                onChange={(e) => setVehicleMileage(e.target.value)}
+                            />
+
+                            {/* 👇 New Input: Vehicle Condition (Dropdown) */}
+                            <select
+                                className="input input-sm input-bordered mt-0 w-full max-w-xs"
+                                value={vehicleCondition || ''}
+                                onChange={(e) => setVehicleCondition(e.target.value)}
+                            >
+                                <option value="" disabled>Select Vehicle Condition</option>
+                                <option value="bad">Bad</option>
+                                <option value="average">Average</option>
+                                <option value="good">Good</option>
+                                <option value="new">New</option>
+                            </select>
+
+                            {/* </div>
+
+                            <div className="flex flex-col space-y-3 items-center"> */}
                             <input
                                 type="text"
                                 placeholder="Enter Source"
@@ -1200,7 +1241,7 @@ export default function MapDrawer() {
                                                 </li>
                                                 <li>
                                                     Time Taken:{' '}
-                                                    {(shortestRoute?.time || shortestRoute?.duration)&&
+                                                    {(shortestRoute?.time || shortestRoute?.duration) &&
                                                         prettyMilliseconds(
                                                             shortestRoute?.time || shortestRoute?.duration
                                                         )}
@@ -1242,7 +1283,7 @@ export default function MapDrawer() {
                                                         fastestRoute?.time) &&
                                                         prettyMilliseconds(
                                                             fastestRoute?.duration ||
-                                                                fastestRoute?.time
+                                                            fastestRoute?.time
                                                         )}
                                                 </li>
                                                 <li>
@@ -1320,7 +1361,7 @@ export default function MapDrawer() {
                                                     {leastCarbonRoute?.time &&
                                                         prettyMilliseconds(
                                                             leastCarbonRoute?.time ??
-                                                                1
+                                                            1
                                                         )}
                                                 </li>
                                                 <li>
@@ -1361,7 +1402,7 @@ export default function MapDrawer() {
                                                         balancedRoute?.duration) &&
                                                         prettyMilliseconds(
                                                             balancedRoute?.time ??
-                                                                balancedRoute?.duration
+                                                            balancedRoute?.duration
                                                         )}
                                                 </li>
                                                 <li>
@@ -1450,8 +1491,8 @@ export default function MapDrawer() {
                                                 {leapRoute?.time &&
                                                     prettyMilliseconds(
                                                         leapRoute?.time ??
-                                                            leapRoute?.duration *
-                                                                1000
+                                                        leapRoute?.duration *
+                                                        1000
                                                     )}
                                             </li>
                                         ) : routePreference == 'emission' ? (
@@ -1460,8 +1501,8 @@ export default function MapDrawer() {
                                                 {leastCarbonRoute?.time &&
                                                     prettyMilliseconds(
                                                         leastCarbonRoute?.time ??
-                                                            leastCarbonRoute?.duration *
-                                                                1000
+                                                        leastCarbonRoute?.duration *
+                                                        1000
                                                     )}
                                             </li>
                                         ) : routePreference == 'balanced' ? (
@@ -1471,7 +1512,7 @@ export default function MapDrawer() {
                                                     balancedRoute?.time) &&
                                                     prettyMilliseconds(
                                                         balancedRoute?.duration ??
-                                                            balancedRoute?.time
+                                                        balancedRoute?.time
                                                     )}
                                             </li>
                                         ) : (
