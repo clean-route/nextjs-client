@@ -7,6 +7,6 @@ export default function App() {
             {/* <footer className="mx-auto w-fit text-center bg-transparent">
           Least Exposure to Air Pollution Path
         </footer> */}
-        </main>
+        </main> 
     )
 }
