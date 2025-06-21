@@ -9,7 +9,7 @@ export default function getIconFromMode({ mode, locationType }) {
             icon.src = '/images/bus.png'
             icon.height = 400
             icon.width = 900
-        } else if (mode == 'scooter') {
+        } else if (mode == 'scooter' || mode == 'two-wheeler') {
             icon.height = 800
             icon.width = 600
             icon.src = '/images/scooter.png'

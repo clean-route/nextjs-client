@@ -18,14 +18,15 @@ export default function MapDrawer() {
     const source = useInput('') //custom hook
     const destination = useInput('')
     const [mode, setMode] = useState('')
+    const [vehicleMass, setVehicleMass] = useState('')
+    const [vehicleCondition, setVehicleCondition] = useState('')
+    const [engineType, setEngineType] = useState('')
     const [routePreference, setRoutePreference] = useState('')
     const [delayCode, setDelayCode] = useState(null)
     const [distance, setDistance] = useState(0)
     const [time, setTime] = useState(0)
     const [exposure, setExposure] = useState(0)
     const [instructions, setInstructions] = useState([])
-    const [vehicleMileage, setVehicleMileage] = useState('');
-    const [vehicleCondition, setVehicleCondition] = useState(null);
 
     // Type of Routes
     const [shortestRoute, setShortestRoute] = useState({})
@@ -47,6 +48,11 @@ export default function MapDrawer() {
         }
         setupMap({ position: position, placeName: 'Default Location' })
     }, [])
+
+    // Reset vehicle mass when mode changes
+    useEffect(() => {
+        setVehicleMass('')
+    }, [mode])
 
     //--------------- Initializes the map object globally-------------------
     // Renders the map on the screen
@@ -269,10 +275,11 @@ export default function MapDrawer() {
             source: source.position,
             destination: destination.position,
             delayCode: parseInt(delayCode),
-            mode: mode,
+            mode: mode === 'car' ? 'driving-traffic' : 'scooter',
             route_preference: routePreference,
-            mileage: vehicleMileage,
-            condition: vehicleCondition
+            vehicle_mass: parseInt(vehicleMass),
+            condition: vehicleCondition,
+            engine_type: engineType
         }
 
         console.log("request body: ", body)
@@ -395,10 +402,11 @@ export default function MapDrawer() {
                             source: source.position,
                             destination: destination.position,
                             delayCode: parseInt(delayCode),
-                            mode: mode,
+                            mode: mode === 'car' ? 'driving-traffic' : 'scooter',
                             route_preference: 'shortest',
-                            mileage: vehicleMileage,
-                            condition: vehicleCondition
+                            vehicle_mass: parseInt(vehicleMass),
+                            condition: vehicleCondition,
+                            engine_type: engineType
                         }
                         console.log("request body: ", body)
 
@@ -462,10 +470,11 @@ export default function MapDrawer() {
                             source: source.position,
                             destination: destination.position,
                             delayCode: parseInt(delayCode),
-                            mode: mode,
+                            mode: mode === 'car' ? 'driving-traffic' : 'scooter',
                             route_preference: 'fastest',
-                            mileage: vehicleMileage,
-                            condition: vehicleCondition
+                            vehicle_mass: parseInt(vehicleMass),
+                            condition: vehicleCondition,
+                            engine_type: engineType
                         }
 
                         requestOptions = {
@@ -530,10 +539,11 @@ export default function MapDrawer() {
                             source: source.position,
                             destination: destination.position,
                             delayCode: parseInt(delayCode),
-                            mode: mode,
+                            mode: mode === 'car' ? 'driving-traffic' : 'scooter',
                             route_preference: 'leap',
-                            mileage: vehicleMileage,
-                            condition: vehicleCondition
+                            vehicle_mass: parseInt(vehicleMass),
+                            condition: vehicleCondition,
+                            engine_type: engineType
                         }
 
                         requestOptions = {
@@ -562,7 +572,7 @@ export default function MapDrawer() {
                         // shortestRouteTime = temp_routes[0].time
                         // shortestRouteDistance = temp_routes[0].distance
 
-                        // routes[0].time =
+                        // // routes[0].time =
                         //     (routes[0].distance / shortestRouteDistance) *
                         //     shortestRouteTime
 
@@ -640,10 +650,11 @@ export default function MapDrawer() {
                             source: source.position,
                             destination: destination.position,
                             delayCode: parseInt(delayCode),
-                            mode: mode,
+                            mode: mode === 'car' ? 'driving-traffic' : 'scooter',
                             route_preference: 'balanced',
-                            mileage: vehicleMileage,
-                            condition: vehicleCondition
+                            vehicle_mass: parseInt(vehicleMass),
+                            condition: vehicleCondition,
+                            engine_type: engineType
                         }
 
                         requestOptions = {
@@ -709,10 +720,11 @@ export default function MapDrawer() {
                             source: source.position,
                             destination: destination.position,
                             delayCode: parseInt(delayCode),
-                            mode: mode,
+                            mode: mode === 'car' ? 'driving-traffic' : 'scooter',
                             route_preference: 'emission',
-                            mileage: vehicleMileage,
-                            condition: vehicleCondition
+                            vehicle_mass: parseInt(vehicleMass),
+                            condition: vehicleCondition,
+                            engine_type: engineType
                         }
 
                         requestOptions = {
@@ -839,32 +851,182 @@ export default function MapDrawer() {
                     <form>
                         <div className="flex flex-col space-y-3 items-center">
 
-                            {/* 👇 New Input: Vehicle Mileage */}
-                            
-                            <input
-                                type="number"
-                                placeholder="Enter Vehicle Mileage"
-                                className="input input-sm input-bordered mt-0 w-full max-w-xs"
-                                value={vehicleMileage}
-                                onChange={(e) => setVehicleMileage(e.target.value)}
-                            />
-
-                            {/* 👇 New Input: Vehicle Condition (Dropdown) */}
+                            {/* 1. Mode of Transport */}
                             <select
-                                className="input input-sm input-bordered mt-0 w-full max-w-xs"
-                                value={vehicleCondition || ''}
+                                className="select select-sm select-bordered w-full max-w-xs text-center"
+                                required
+                                value={mode}
+                                onChange={(e) => {
+                                    setMode(e.target.value)
+                                    console.log(e.target.value)
+                                }}
+                            >
+                                <option
+                                    disabled
+                                    value=""
+                                    selected
+                                    className="text-center"
+                                >
+                                    -- Select Mode of Transport --
+                                </option>
+                                <option value="car">Car</option>
+                                <option value="two-wheeler">Two Wheeler</option>
+                            </select>
+
+                            {/* 2. Vehicle Mass */}
+                            <div className="w-full max-w-xs">
+                                <input
+                                    type="number"
+                                    placeholder="Enter Vehicle Mass (kg)"
+                                    className="input input-sm input-bordered mt-0 w-full"
+                                    value={vehicleMass}
+                                    onChange={(e) => setVehicleMass(e.target.value)}
+                                    min={mode === 'car' ? 800 : 100}
+                                    max={mode === 'car' ? 3000 : 300}
+                                    required
+                                />
+                                <div className="text-xs text-gray-500 mt-1">
+                                    {mode === 'car' ? 'Range: 800-3000 kg' : mode === 'two-wheeler' ? 'Range: 100-300 kg' : 'Select mode first'}
+                                </div>
+                            </div>
+
+                            {/* 3. Vehicle Condition */}
+                            <select
+                                className="select select-sm select-bordered w-full max-w-xs"
+                                required
+                                value={vehicleCondition}
                                 onChange={(e) => setVehicleCondition(e.target.value)}
                             >
                                 <option value="" disabled>Select Vehicle Condition</option>
-                                <option value="bad">Bad</option>
-                                <option value="average">Average</option>
-                                <option value="good">Good</option>
-                                <option value="new">New</option>
+                                <option value="okay">Okay (10+ years)</option>
+                                <option value="average">Average (5+ years)</option>
+                                <option value="good">Good (2 years)</option>
+                                <option value="new">New (recently bought)</option>
                             </select>
 
-                            {/* </div>
+                            {/* 4. Engine Type */}
+                            <select
+                                className="select select-sm select-bordered w-full max-w-xs"
+                                required
+                                value={engineType}
+                                onChange={(e) => setEngineType(e.target.value)}
+                            >
+                                <option value="" disabled>Select Engine Type</option>
+                                <option value="petrol">Petrol</option>
+                                <option value="diesel">Diesel</option>
+                                <option value="cng">CNG</option>
+                                <option value="ev">EV</option>
+                            </select>
 
-                            <div className="flex flex-col space-y-3 items-center"> */}
+                            {/* 5. Route Preference */}
+                            <div className="w-full max-w-xs">
+                                <div className="flex items-center gap-2">
+                                    <select
+                                        className="select select-sm select-bordered flex-1"
+                                        required
+                                        value={routePreference}
+                                        onChange={(e) => {
+                                            setRoutePreference(e.target.value)
+                                            console.log(e.target.value)
+                                        }}
+                                    >
+                                        <option disabled value="">
+                                            -- Select Route Preference --
+                                        </option>
+                                        <option value="shortest">
+                                            Shortest (Distance)
+                                        </option>
+                                        <option value="fastest">
+                                            Fastest (Time)
+                                        </option>
+                                        <option value="leap">
+                                            LEAP (exposure)
+                                        </option>
+                                        <option value="emission">
+                                            LCO2 (emission)
+                                        </option>
+                                        <option value="balanced">
+                                            Suggested (recommended)
+                                        </option>
+                                        <option value="all">All</option>
+                                    </select>
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                        strokeWidth={1.5}
+                                        stroke="currentColor"
+                                        className="w-5 h-5 text-gray-500 hover:text-gray-700 cursor-pointer"
+                                        onClick={() => {
+                                            setShowColorInfo(!showColorInfo)
+                                            console.log('click registered')
+                                        }}
+                                        title="Click to show/hide route color legend"
+                                    >
+                                        <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z"
+                                        />
+                                    </svg>
+                                </div>
+                                {showColorInfo && (
+                                    <div className="mt-2 p-2 bg-gray-50 rounded-md">
+                                        <div className="text-xs text-gray-600 mb-1">Route Colors:</div>
+                                        <div className="flex flex-wrap gap-2">
+                                            <div className="flex items-center gap-1">
+                                                <div className="w-3 h-3 bg-shortest rounded-full"></div>
+                                                <span className="text-xs">Shortest</span>
+                                            </div>
+                                            <div className="flex items-center gap-1">
+                                                <div className="w-3 h-3 bg-fastest rounded-full"></div>
+                                                <span className="text-xs">Fastest</span>
+                                            </div>
+                                            <div className="flex items-center gap-1">
+                                                <div className="w-3 h-3 bg-leap rounded-full"></div>
+                                                <span className="text-xs">LEAP</span>
+                                            </div>
+                                            <div className="flex items-center gap-1">
+                                                <div className="w-3 h-3 bg-emission rounded-full"></div>
+                                                <span className="text-xs">LCO2</span>
+                                            </div>
+                                            <div className="flex items-center gap-1">
+                                                <div className="w-3 h-3 bg-balanced rounded-full"></div>
+                                                <span className="text-xs">Suggested</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* 6. Depart Time */}
+                            <select
+                                className="select select-sm select-bordered w-full max-w-xs"
+                                required
+                                value={delayCode}
+                                onChange={(e) => {
+                                    setDelayCode(e.target.value)
+                                    console.log(e.target.value)
+                                }}
+                            >
+                                <option
+                                    disabled
+                                    value="none"
+                                    selected
+                                    className="text-center"
+                                >
+                                    -- Depart at --
+                                </option>
+                                <option value="0"> Now </option>
+                                <option value="1">+ 1 hrs</option>
+                                <option value="2">+ 2 hrs</option>
+                                <option value="3">+ 3 hrs</option>
+                                <option value="4">+ 4 hrs</option>
+                                <option value="5">+ 5 hrs</option>
+                                <option value="6">+ 6 hrs</option>
+                            </select>
+
+                            {/* Source and Destination */}
                             <input
                                 type="text"
                                 placeholder="Enter Source"
@@ -981,133 +1143,7 @@ export default function MapDrawer() {
                                     </div>
                                 )}
                             </div>
-                            <select
-                                className="select select-sm select-bordered w-full max-w-xs text-center"
-                                required
-                                value={mode}
-                                onChange={(e) => {
-                                    setMode(e.target.value)
-                                    console.log(e.target.value)
-                                }}
-                            >
-                                <option
-                                    disabled
-                                    value=""
-                                    selected
-                                    className="text-center"
-                                >
-                                    -- Select Mode of Transport --
-                                </option>
-                                <option value="driving-traffic">Car</option>
-                                {/* <option value="truck">Bus</option> */}
-                                {/* <option value="car">Car - Driving</option> */}
-                                <option value="scooter">Motorbike</option>
-                                {/* <option value="bike">Cycling</option>
-                                <option value="foot">Walking</option> */}
-                            </select>
 
-                            <select
-                                className="select select-sm select-bordered w-full max-w-xs"
-                                required
-                                value={delayCode}
-                                onChange={(e) => {
-                                    setDelayCode(e.target.value)
-                                    console.log(e.target.value)
-                                }}
-                            >
-                                <option
-                                    disabled
-                                    value="none"
-                                    selected
-                                    className="text-center"
-                                >
-                                    -- Depart at --
-                                </option>
-                                <option value="0"> Now </option>
-                                <option value="1">+ 1 hrs</option>
-                                <option value="2">+ 2 hrs</option>
-                                <option value="3">+ 3 hrs</option>
-                                <option value="4">+ 4 hrs</option>
-                                <option value="5">+ 5 hrs</option>
-                                <option value="6">+ 6 hrs</option>
-                            </select>
-
-                            <div className="flex flex-row justify-evenly items-center">
-                                <select
-                                    className="select select-sm select-bordered max-w-xs"
-                                    required
-                                    value={routePreference}
-                                    onChange={(e) => {
-                                        setRoutePreference(e.target.value)
-                                        console.log(e.target.value)
-                                    }}
-                                >
-                                    <option disabled value="">
-                                        -- Select Route Preference --
-                                    </option>
-                                    <option value="shortest">
-                                        Shortest (Distance)
-                                    </option>
-                                    <option value="fastest">
-                                        Fastest (Time)
-                                    </option>
-                                    <option value="leap">
-                                        LEAP (exposure)
-                                    </option>
-                                    <option value="emission">
-                                        LCO2 (emission)
-                                    </option>
-                                    <option value="balanced">
-                                        Optimal (recommended)
-                                    </option>
-                                    <option value="all">All</option>
-                                </select>
-
-                                <div className="ml-2">
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        fill="none"
-                                        viewBox="0 0 24 24"
-                                        strokeWidth={1.5}
-                                        stroke="currentColor"
-                                        className="w-6 h-6"
-                                        onClick={() => {
-                                            setShowColorInfo(!showColorInfo)
-                                            console.log('click registered')
-                                        }}
-                                    >
-                                        <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z"
-                                        />
-                                    </svg>
-                                </div>
-                            </div>
-                            <div className={showColorInfo ? 'block' : 'hidden'}>
-                                <div className="flex flex-row space-x-3 items-center">
-                                    <div className="flex flex-col justify-center items-center">
-                                        <div className="w-5 h-5 bg-shortest rounded-full"></div>
-                                        <div className="text-xs">Shortest</div>
-                                    </div>
-                                    <div className="flex flex-col justify-center items-center">
-                                        <div className="w-5 h-5 bg-fastest rounded-full"></div>
-                                        <div className="text-xs">Fastest</div>
-                                    </div>
-                                    <div className="flex flex-col justify-center items-center">
-                                        <div className="w-5 h-5 bg-leap rounded-full"></div>
-                                        <div className="text-xs">LEAP</div>
-                                    </div>
-                                    <div className="flex flex-col justify-center items-center">
-                                        <div className="w-5 h-5 bg-emission rounded-full"></div>
-                                        <div className="text-xs">EMISSION</div>
-                                    </div>
-                                    <div className="flex flex-col justify-center items-center">
-                                        <div className="w-5 h-5 bg-balanced rounded-full"></div>
-                                        <div className="text-xs">Optimal</div>
-                                    </div>
-                                </div>
-                            </div>
                             <button
                                 className="btn btn-wide"
                                 onClick={(e) => {
@@ -1157,27 +1193,23 @@ export default function MapDrawer() {
                             </div>
                         )}
                         {routePreference != 'all' && (
-                            <div className="collapse mt-1">
+                            <div className="collapse mt-3 bg-base-200 rounded-lg">
                                 <input type="checkbox" />
-                                <div className="collapse-title text-xl font-medium text-center underline">
-                                    Instructions
+                                <div className="collapse-title text-lg font-semibold text-center text-primary">
+                                    📋 Route Instructions
                                 </div>
-                                <div className="collapse-content">
+                                <div className="collapse-content bg-base-100 rounded-b-lg">
                                     {instructions.length > 0 && !isLoading ? (
-                                        <div className="overflow-auto h-100">
-                                            <ol>
+                                        <div className="overflow-auto max-h-80 p-2">
+                                            <ol className="space-y-2">
                                                 {instructions.map(
                                                     (instruction, index) => {
                                                         return (
-                                                            <li key={index}>
+                                                            <li key={index} className="bg-base-200 p-3 rounded-lg border-l-4 border-primary">
                                                                 <Instruction
                                                                     key={index}
-                                                                    index={
-                                                                        index
-                                                                    }
-                                                                    instruction={
-                                                                        instruction
-                                                                    }
+                                                                    index={index}
+                                                                    instruction={instruction}
                                                                 />
                                                             </li>
                                                         )
@@ -1186,441 +1218,252 @@ export default function MapDrawer() {
                                             </ol>
                                         </div>
                                     ) : isLoading ? (
-                                        <div className="flex flex-col items-center">
-                                            <span className="text-sm mb-2">
-                                                Fetching Data...
+                                        <div className="flex flex-col items-center p-6">
+                                            <div className="loading loading-spinner loading-md mb-3"></div>
+                                            <span className="text-sm text-gray-600">
+                                                Fetching route instructions...
                                             </span>
-                                            <progress className="progress w-11/12 progress-info"></progress>
                                         </div>
                                     ) : (
-                                        <div className="flex flex-row justify-center">
-                                            <span>Wow Such Empty!!</span>
-                                            <span>
-                                                <svg
-                                                    xmlns="http://www.w3.org/2000/svg"
-                                                    fill="none"
-                                                    viewBox="0 0 24 24"
-                                                    strokeWidth={1.5}
-                                                    stroke="currentColor"
-                                                    className="w-6 h-6 ml-2"
-                                                >
-                                                    <path
-                                                        strokeLinecap="round"
-                                                        strokeLinejoin="round"
-                                                        d="M15.182 15.182a4.5 4.5 0 01-6.364 0M21 12a9 9 0 11-18 0 9 9 0 0118 0zM9.75 9.75c0 .414-.168.75-.375.75S9 10.164 9 9.75 9.168 9 9.375 9s.375.336.375.75zm-.375 0h.008v.015h-.008V9.75zm5.625 0c0 .414-.168.75-.375.75s-.375-.336-.375-.75.168-.75.375-.75.375.336.375.75zm-.375 0h.008v.015h-.008V9.75z"
-                                                    />
-                                                </svg>
-                                            </span>
+                                        <div className="flex flex-col items-center p-6 text-gray-500">
+                                            <svg
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                fill="none"
+                                                viewBox="0 0 24 24"
+                                                strokeWidth={1.5}
+                                                stroke="currentColor"
+                                                className="w-12 h-12 mb-2"
+                                            >
+                                                <path
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    d="M15.182 15.182a4.5 4.5 0 01-6.364 0M21 12a9 9 0 11-18 0 9 9 0 0118 0zM9.75 9.75c0 .414-.168.75-.375.75S9 10.164 9 9.75 9.168 9 9.375 9s.375.336.375.75zm-.375 0h.008v.015h-.008V9.75zm5.625 0c0 .414-.168.75-.375.75s-.375-.336-.375-.75.168-.75.375-.75.375.336.375.75zm-.375 0h.008v.015h-.008V9.75z"
+                                                />
+                                            </svg>
+                                            <span className="text-center">No instructions available yet</span>
+                                            <span className="text-xs text-center mt-1">Select a route to see step-by-step directions</span>
                                         </div>
                                     )}
                                 </div>
                             </div>
                         )}
-                        <div className="collapse mt-2">
+                        <div className="collapse mt-3 bg-base-200 rounded-lg">
                             <input type="checkbox" />
-                            <div className="collapse-title text-xl font-medium text-center underline">
-                                Route Details
+                            <div className="collapse-title text-lg font-semibold text-center text-primary">
+                                📊 Route Details
                             </div>
-                            <div className="collapse-content">
+                            <div className="collapse-content bg-base-100 rounded-b-lg">
                                 {routePreference == 'all' ? (
-                                    <div className="overflow-auto h-72">
-                                        <div>
-                                            <div className="font-bold underline">
-                                                Shortest Route
+                                    <div className="overflow-auto max-h-96 p-2 space-y-4">
+                                        {/* Shortest Route Card */}
+                                        <div className="card bg-base-200 shadow-sm">
+                                            <div className="card-body p-4">
+                                                <div className="flex items-center gap-2 mb-3">
+                                                    <div className="w-4 h-4 bg-shortest rounded-full"></div>
+                                                    <h3 className="card-title text-lg">Shortest Route</h3>
+                                                </div>
+                                                <div className="grid grid-cols-2 gap-2 text-sm">
+                                                    <div className="flex justify-between">
+                                                        <span className="text-gray-600">Distance:</span>
+                                                        <span className="font-medium">{prettyMetric(shortestRoute?.distance).humanize()}</span>
+                                                    </div>
+                                                    <div className="flex justify-between">
+                                                        <span className="text-gray-600">Time:</span>
+                                                        <span className="font-medium">
+                                                            {(shortestRoute?.time || shortestRoute?.duration) && 
+                                                                prettyMilliseconds(shortestRoute?.time || shortestRoute?.duration)}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex justify-between">
+                                                        <span className="text-gray-600">Exposure:</span>
+                                                        <span className="font-medium">{shortestRoute?.total_exposure?.toFixed(2)} µg/㎥</span>
+                                                    </div>
+                                                    <div className="flex justify-between">
+                                                        <span className="text-gray-600">Energy:</span>
+                                                        <span className="font-medium">{shortestRoute?.total_energy?.toFixed(2)} kJ</span>
+                                                    </div>
+                                                </div>
                                             </div>
-                                            <ul className="ml-2">
-                                                <li>
-                                                    Route Preference:{' '}
-                                                    {routePreference}
-                                                </li>
-                                                <li>
-                                                    Distance:{' '}
-                                                    {prettyMetric(
-                                                        shortestRoute?.distance
-                                                    ).humanize()}
-                                                </li>
-                                                <li>
-                                                    Time Taken:{' '}
-                                                    {(shortestRoute?.time || shortestRoute?.duration) &&
-                                                        prettyMilliseconds(
-                                                            shortestRoute?.time || shortestRoute?.duration
-                                                        )}
-                                                </li>
-                                                <li>
-                                                    Total Exposure:{' '}
-                                                    {shortestRoute?.total_exposure?.toFixed(
-                                                        2
-                                                    )}{' '}
-                                                    µg/㎥
-                                                </li>
-                                                <li>
-                                                    Energy Required:{' '}
-                                                    {shortestRoute?.total_energy?.toFixed(
-                                                        2
-                                                    )}{' '}
-                                                    kJ
-                                                </li>
-                                            </ul>
-                                        </div>
-                                        <div>
-                                            <div className="font-bold underline">
-                                                Fastest Route
-                                            </div>
-                                            <ul className="ml-2">
-                                                <li>
-                                                    Route Preference:{' '}
-                                                    {routePreference}
-                                                </li>
-                                                <li>
-                                                    Distance:{' '}
-                                                    {prettyMetric(
-                                                        fastestRoute?.distance
-                                                    ).humanize()}
-                                                </li>
-                                                <li>
-                                                    Time Taken:{' '}
-                                                    {(fastestRoute?.duration ||
-                                                        fastestRoute?.time) &&
-                                                        prettyMilliseconds(
-                                                            fastestRoute?.duration ||
-                                                            fastestRoute?.time
-                                                        )}
-                                                </li>
-                                                <li>
-                                                    Total Exposure:{' '}
-                                                    {fastestRoute?.total_exposure?.toFixed(
-                                                        2
-                                                    )}{' '}
-                                                    µg/㎥
-                                                </li>
-                                                <li>
-                                                    Energy Required:{' '}
-                                                    {fastestRoute?.total_energy?.toFixed(
-                                                        2
-                                                    )}{' '}
-                                                    kJ
-                                                </li>
-                                            </ul>
-                                        </div>
-                                        <div>
-                                            <div className="font-bold underline">
-                                                LEAP Route
-                                            </div>
-                                            <ul className="ml-2">
-                                                <li>
-                                                    Route Preference:{' '}
-                                                    {routePreference}
-                                                </li>
-                                                <li>
-                                                    Distance:{' '}
-                                                    {prettyMetric(
-                                                        leapRoute?.distance
-                                                    ).humanize()}
-                                                </li>
-                                                <li>
-                                                    Time Taken:{' '}
-                                                    {leapRoute?.time &&
-                                                        prettyMilliseconds(
-                                                            leapRoute?.time
-                                                        )}
-                                                </li>
-                                                <li>
-                                                    Total Exposure:{' '}
-                                                    {leapRoute?.total_exposure?.toFixed(
-                                                        2
-                                                    )}{' '}
-                                                    µg/㎥
-                                                </li>
-                                                <li>
-                                                    Energy Required:{' '}
-                                                    {leapRoute?.total_energy?.toFixed(
-                                                        2
-                                                    )}{' '}
-                                                    kJ
-                                                </li>
-                                            </ul>
                                         </div>
 
-                                        <div>
-                                            <div className="font-bold underline">
-                                                LCO2 Route
+                                        {/* Fastest Route Card */}
+                                        <div className="card bg-base-200 shadow-sm">
+                                            <div className="card-body p-4">
+                                                <div className="flex items-center gap-2 mb-3">
+                                                    <div className="w-4 h-4 bg-fastest rounded-full"></div>
+                                                    <h3 className="card-title text-lg">Fastest Route</h3>
+                                                </div>
+                                                <div className="grid grid-cols-2 gap-2 text-sm">
+                                                    <div className="flex justify-between">
+                                                        <span className="text-gray-600">Distance:</span>
+                                                        <span className="font-medium">{prettyMetric(fastestRoute?.distance).humanize()}</span>
+                                                    </div>
+                                                    <div className="flex justify-between">
+                                                        <span className="text-gray-600">Time:</span>
+                                                        <span className="font-medium">
+                                                            {(fastestRoute?.duration || fastestRoute?.time) && 
+                                                                prettyMilliseconds(fastestRoute?.duration || fastestRoute?.time)}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex justify-between">
+                                                        <span className="text-gray-600">Exposure:</span>
+                                                        <span className="font-medium">{fastestRoute?.total_exposure?.toFixed(2)} µg/㎥</span>
+                                                    </div>
+                                                    <div className="flex justify-between">
+                                                        <span className="text-gray-600">Energy:</span>
+                                                        <span className="font-medium">{fastestRoute?.total_energy?.toFixed(2)} kJ</span>
+                                                    </div>
+                                                </div>
                                             </div>
-                                            <ul className="ml-2">
-                                                <li>
-                                                    Route Preference:{' '}
-                                                    {routePreference}
-                                                </li>
-                                                <li>
-                                                    Distance:{' '}
-                                                    {prettyMetric(
-                                                        leastCarbonRoute?.distance
-                                                    ).humanize()}
-                                                </li>
-                                                <li>
-                                                    Time Taken:{' '}
-                                                    {leastCarbonRoute?.time &&
-                                                        prettyMilliseconds(
-                                                            leastCarbonRoute?.time ??
-                                                            1
-                                                        )}
-                                                </li>
-                                                <li>
-                                                    Total Exposure:{' '}
-                                                    {leastCarbonRoute?.total_exposure?.toFixed(
-                                                        2
-                                                    )}{' '}
-                                                    µg/㎥
-                                                </li>
-                                                <li>
-                                                    Energy Required:{' '}
-                                                    {leastCarbonRoute?.total_energy?.toFixed(
-                                                        2
-                                                    )}{' '}
-                                                    kJ
-                                                </li>
-                                            </ul>
                                         </div>
 
-                                        <div>
-                                            <div className="font-bold underline">
-                                                Optimal Route
+                                        {/* LEAP Route Card */}
+                                        <div className="card bg-base-200 shadow-sm">
+                                            <div className="card-body p-4">
+                                                <div className="flex items-center gap-2 mb-3">
+                                                    <div className="w-4 h-4 bg-leap rounded-full"></div>
+                                                    <h3 className="card-title text-lg">LEAP Route</h3>
+                                                </div>
+                                                <div className="grid grid-cols-2 gap-2 text-sm">
+                                                    <div className="flex justify-between">
+                                                        <span className="text-gray-600">Distance:</span>
+                                                        <span className="font-medium">{prettyMetric(leapRoute?.distance).humanize()}</span>
+                                                    </div>
+                                                    <div className="flex justify-between">
+                                                        <span className="text-gray-600">Time:</span>
+                                                        <span className="font-medium">
+                                                            {leapRoute?.time && prettyMilliseconds(leapRoute?.time)}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex justify-between">
+                                                        <span className="text-gray-600">Exposure:</span>
+                                                        <span className="font-medium">{leapRoute?.total_exposure?.toFixed(2)} µg/㎥</span>
+                                                    </div>
+                                                    <div className="flex justify-between">
+                                                        <span className="text-gray-600">Energy:</span>
+                                                        <span className="font-medium">{leapRoute?.total_energy?.toFixed(2)} kJ</span>
+                                                    </div>
+                                                </div>
                                             </div>
-                                            <ul className="ml-2">
-                                                <li>
-                                                    Route Preference:{' '}
-                                                    {routePreference}
-                                                </li>
-                                                <li>
-                                                    Distance:{' '}
-                                                    {prettyMetric(
-                                                        balancedRoute?.distance
-                                                    ).humanize()}
-                                                </li>
-                                                <li>
-                                                    Time Taken:{' '}
-                                                    {(balancedRoute?.time ??
-                                                        balancedRoute?.duration) &&
-                                                        prettyMilliseconds(
-                                                            balancedRoute?.time ??
-                                                            balancedRoute?.duration
-                                                        )}
-                                                </li>
-                                                <li>
-                                                    Total Exposure:{' '}
-                                                    {balancedRoute?.total_exposure?.toFixed(
-                                                        2
-                                                    )}{' '}
-                                                    µg/㎥
-                                                </li>
-                                                <li>
-                                                    Energy Required:{' '}
-                                                    {balancedRoute?.total_energy?.toFixed(
-                                                        2
-                                                    )}{' '}
-                                                    kJ
-                                                </li>
-                                            </ul>
+                                        </div>
+
+                                        {/* LCO2 Route Card */}
+                                        <div className="card bg-base-200 shadow-sm">
+                                            <div className="card-body p-4">
+                                                <div className="flex items-center gap-2 mb-3">
+                                                    <div className="w-4 h-4 bg-emission rounded-full"></div>
+                                                    <h3 className="card-title text-lg">LCO2 Route</h3>
+                                                </div>
+                                                <div className="grid grid-cols-2 gap-2 text-sm">
+                                                    <div className="flex justify-between">
+                                                        <span className="text-gray-600">Distance:</span>
+                                                        <span className="font-medium">{prettyMetric(leastCarbonRoute?.distance).humanize()}</span>
+                                                    </div>
+                                                    <div className="flex justify-between">
+                                                        <span className="text-gray-600">Time:</span>
+                                                        <span className="font-medium">
+                                                            {leastCarbonRoute?.time && prettyMilliseconds(leastCarbonRoute?.time)}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex justify-between">
+                                                        <span className="text-gray-600">Exposure:</span>
+                                                        <span className="font-medium">{leastCarbonRoute?.total_exposure?.toFixed(2)} µg/㎥</span>
+                                                    </div>
+                                                    <div className="flex justify-between">
+                                                        <span className="text-gray-600">Energy:</span>
+                                                        <span className="font-medium">{leastCarbonRoute?.total_energy?.toFixed(2)} kJ</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Suggested Route Card */}
+                                        <div className="card bg-base-200 shadow-sm">
+                                            <div className="card-body p-4">
+                                                <div className="flex items-center gap-2 mb-3">
+                                                    <div className="w-4 h-4 bg-balanced rounded-full"></div>
+                                                    <h3 className="card-title text-lg">Suggested Route</h3>
+                                                </div>
+                                                <div className="grid grid-cols-2 gap-2 text-sm">
+                                                    <div className="flex justify-between">
+                                                        <span className="text-gray-600">Distance:</span>
+                                                        <span className="font-medium">{prettyMetric(balancedRoute?.distance).humanize()}</span>
+                                                    </div>
+                                                    <div className="flex justify-between">
+                                                        <span className="text-gray-600">Time:</span>
+                                                        <span className="font-medium">
+                                                            {(balancedRoute?.time ?? balancedRoute?.duration) && 
+                                                                prettyMilliseconds(balancedRoute?.time ?? balancedRoute?.duration)}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex justify-between">
+                                                        <span className="text-gray-600">Exposure:</span>
+                                                        <span className="font-medium">{balancedRoute?.total_exposure?.toFixed(2)} µg/㎥</span>
+                                                    </div>
+                                                    <div className="flex justify-between">
+                                                        <span className="text-gray-600">Energy:</span>
+                                                        <span className="font-medium">{balancedRoute?.total_energy?.toFixed(2)} kJ</span>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 ) : (
-                                    <ul>
-                                        <li>Vehicle Profile: {mode}</li>
-                                        <li>
-                                            Route Preference: {routePreference}
-                                        </li>
-
-                                        {routePreference == 'shortest' ? (
-                                            <li>
-                                                Distance:{' '}
-                                                {prettyMetric(
-                                                    shortestRoute?.distance
-                                                ).humanize()}
-                                            </li>
-                                        ) : routePreference == 'fastest' ? (
-                                            <li>
-                                                Distance:{' '}
-                                                {prettyMetric(
-                                                    fastestRoute?.distance
-                                                ).humanize()}
-                                            </li>
-                                        ) : routePreference == 'leap' ? (
-                                            <li>
-                                                Distance:{' '}
-                                                {prettyMetric(
-                                                    leapRoute?.distance
-                                                ).humanize()}
-                                            </li>
-                                        ) : routePreference == 'emission' ? (
-                                            <li>
-                                                Distance:{' '}
-                                                {prettyMetric(
-                                                    leastCarbonRoute?.distance
-                                                ).humanize()}
-                                            </li>
-                                        ) : routePreference == 'balanced' ? (
-                                            <li>
-                                                Distance:{' '}
-                                                {prettyMetric(
-                                                    balancedRoute?.distance
-                                                ).humanize()}
-                                            </li>
-                                        ) : (
-                                            <li>
-                                                Distance: {`No Route Selected`}
-                                            </li>
-                                        )}
-                                        {routePreference == 'shortest' ? (
-                                            <li>
-                                                Time Taken:{' '}
-                                                {(shortestRoute?.time || shortestRoute?.duration) &&
-                                                    prettyMilliseconds(
-                                                        shortestRoute?.time || shortestRoute?.duration
-                                                    )}
-                                            </li>
-                                        ) : routePreference == 'fastest' ? (
-                                            <li>
-                                                Time Taken:{' '}
-                                                {(fastestRoute?.duration || fastestRoute?.time) &&
-                                                    prettyMilliseconds(
-                                                        fastestRoute?.duration || fastestRoute?.time
-                                                    )}
-                                            </li>
-                                        ) : routePreference == 'leap' ? (
-                                            <li>
-                                                Time Taken:{' '}
-                                                {leapRoute?.time &&
-                                                    prettyMilliseconds(
-                                                        leapRoute?.time ??
-                                                        leapRoute?.duration *
-                                                        1000
-                                                    )}
-                                            </li>
-                                        ) : routePreference == 'emission' ? (
-                                            <li>
-                                                Time Taken:{' '}
-                                                {leastCarbonRoute?.time &&
-                                                    prettyMilliseconds(
-                                                        leastCarbonRoute?.time ??
-                                                        leastCarbonRoute?.duration *
-                                                        1000
-                                                    )}
-                                            </li>
-                                        ) : routePreference == 'balanced' ? (
-                                            <li>
-                                                Time Taken:{' '}
-                                                {(balancedRoute?.duration ??
-                                                    balancedRoute?.time) &&
-                                                    prettyMilliseconds(
-                                                        balancedRoute?.duration ??
-                                                        balancedRoute?.time
-                                                    )}
-                                            </li>
-                                        ) : (
-                                            <li>
-                                                Time Taken:{' '}
-                                                {`No Route Selected`}
-                                            </li>
-                                        )}
-
-                                        {routePreference == 'leap' ? (
-                                            <li>
-                                                Exposure:{' '}
-                                                {leapRoute?.total_exposure?.toFixed(
-                                                    2
-                                                )}{' '}
-                                                µg/㎥
-                                            </li>
-                                        ) : routePreference == 'balanced' ? (
-                                            <li>
-                                                Exposure:{' '}
-                                                {balancedRoute?.total_exposure?.toFixed(
-                                                    2
-                                                )}{' '}
-                                                µg/㎥
-                                            </li>
-                                        ) : routePreference == 'shortest' ? (
-                                            <li>
-                                                Exposure:{' '}
-                                                {shortestRoute?.total_exposure?.toFixed(
-                                                    2
-                                                )}{' '}
-                                                µg/㎥
-                                            </li>
-                                        ) : routePreference == 'fastest' ? (
-                                            <li>
-                                                Exposure:{' '}
-                                                {fastestRoute?.total_exposure?.toFixed(
-                                                    2
-                                                )}{' '}
-                                                µg/㎥
-                                            </li>
-                                        ) : routePreference == 'emission' ? (
-                                            <li>
-                                                Exposure:{' '}
-                                                {leastCarbonRoute?.total_exposure?.toFixed(
-                                                    2
-                                                )}{' '}
-                                                µg/㎥
-                                            </li>
-                                        ) : (
-                                            <li>
-                                                Exposure: {`No Route Selected`}{' '}
-                                                µg/㎥
-                                            </li>
-                                        )}
-
-                                        {routePreference == 'leap' ? (
-                                            <li>
-                                                Energy Required:{' '}
-                                                {leapRoute &&
-                                                    leapRoute?.total_energy?.toFixed(
-                                                        2
-                                                    )}{' '}
-                                                kJ
-                                            </li>
-                                        ) : routePreference == 'balanced' ? (
-                                            <li>
-                                                Energy Required:{' '}
-                                                {balancedRoute &&
-                                                    balancedRoute?.total_energy?.toFixed(
-                                                        2
-                                                    )}{' '}
-                                                kJ
-                                            </li>
-                                        ) : routePreference == 'shortest' ? (
-                                            <li>
-                                                Energy Required:{' '}
-                                                {shortestRoute &&
-                                                    shortestRoute?.total_energy?.toFixed(
-                                                        2
-                                                    )}{' '}
-                                                kJ
-                                            </li>
-                                        ) : routePreference == 'fastest' ? (
-                                            <li>
-                                                Energy Required:{' '}
-                                                {fastestRoute &&
-                                                    fastestRoute?.total_energy?.toFixed(
-                                                        2
-                                                    )}{' '}
-                                                kJ
-                                            </li>
-                                        ) : routePreference == 'emission' ? (
-                                            <li>
-                                                Energy Required:{' '}
-                                                {leastCarbonRoute &&
-                                                    leastCarbonRoute?.total_energy?.toFixed(
-                                                        2
-                                                    )}{' '}
-                                                kJ
-                                            </li>
-                                        ) : (
-                                            <li>
-                                                Energy Required:{' '}
-                                                {`No Route Selected`}{' '}
-                                            </li>
-                                        )}
-                                    </ul>
+                                    <div className="p-4">
+                                        <div className="card bg-base-200 shadow-sm">
+                                            <div className="card-body p-4">
+                                                <div className="flex items-center gap-2 mb-3">
+                                                    <div className={`w-4 h-4 rounded-full ${
+                                                        routePreference === 'shortest' ? 'bg-shortest' :
+                                                        routePreference === 'fastest' ? 'bg-fastest' :
+                                                        routePreference === 'leap' ? 'bg-leap' :
+                                                        routePreference === 'emission' ? 'bg-emission' :
+                                                        routePreference === 'balanced' ? 'bg-balanced' : 'bg-gray-400'
+                                                    }`}></div>
+                                                    <h3 className="card-title text-lg capitalize">{routePreference} Route</h3>
+                                                </div>
+                                                <div className="grid grid-cols-2 gap-3 text-sm">
+                                                    <div className="flex justify-between">
+                                                        <span className="text-gray-600">Vehicle:</span>
+                                                        <span className="font-medium capitalize">{mode}</span>
+                                                    </div>
+                                                    <div className="flex justify-between">
+                                                        <span className="text-gray-600">Distance:</span>
+                                                        <span className="font-medium">
+                                                            {routePreference == 'shortest' ? prettyMetric(shortestRoute?.distance).humanize() :
+                                                             routePreference == 'fastest' ? prettyMetric(fastestRoute?.distance).humanize() :
+                                                             routePreference == 'leap' ? prettyMetric(leapRoute?.distance).humanize() :
+                                                             routePreference == 'emission' ? prettyMetric(leastCarbonRoute?.distance).humanize() :
+                                                             routePreference == 'balanced' ? prettyMetric(balancedRoute?.distance).humanize() :
+                                                             'N/A'}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex justify-between">
+                                                        <span className="text-gray-600">Time:</span>
+                                                        <span className="font-medium">
+                                                            {routePreference == 'shortest' ? ((shortestRoute?.time || shortestRoute?.duration) && prettyMilliseconds(shortestRoute?.time || shortestRoute?.duration)) :
+                                                             routePreference == 'fastest' ? ((fastestRoute?.duration || fastestRoute?.time) && prettyMilliseconds(fastestRoute?.duration || fastestRoute?.time)) :
+                                                             routePreference == 'leap' ? (leapRoute?.time && prettyMilliseconds(leapRoute?.time)) :
+                                                             routePreference == 'emission' ? (leastCarbonRoute?.time && prettyMilliseconds(leastCarbonRoute?.time)) :
+                                                             routePreference == 'balanced' ? ((balancedRoute?.duration ?? balancedRoute?.time) && prettyMilliseconds(balancedRoute?.duration ?? balancedRoute?.time)) :
+                                                             'N/A'}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex justify-between">
+                                                        <span className="text-gray-600">Exposure:</span>
+                                                        <span className="font-medium">
+                                                            {routePreference == 'leap' ? `${leapRoute?.total_exposure?.toFixed(2)} µg/㎥` :
+                                                             routePreference == 'balanced' ? `${balancedRoute?.total_exposure?.toFixed(2)} µg/㎥` :
+                                                             routePreference == 'shortest' ? `${shortestRoute?.total_exposure?.toFixed(2)} µg/㎥` :
+                                                             routePreference == 'fastest' ? `${fastestRoute?.total_exposure?.toFixed(2)} µg/㎥` :
+                                                             routePreference == 'emission' ? `${leastCarbonRoute?.total_exposure?.toFixed(2)} µg/㎥` :
+                                                             'N/A'}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 )}
                             </div>
                         </div>
