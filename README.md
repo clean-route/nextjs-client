@@ -40,8 +40,8 @@ Air Pollution Routing is a cutting-edge web application that revolutionizes rout
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-username/air-pollution-routing.git
-cd air-pollution-routing
+git clone https://github.com/clean-route/nextjs-client
+cd nextjs-client
 
 # Install dependencies
 yarn install
@@ -72,13 +72,13 @@ yarn start
 
 <div align="center">
 
-| Route Type | 🎯 Objective | 🎨 Color | 💡 Best For |
+| Route Type | 🎯 Objective | 💡 Best For |
 |------------|--------------|----------|-------------|
-| **Shortest** | Minimize distance | 🔵 Blue | Fuel efficiency |
-| **Fastest** | Minimize time | 🟢 Green | Time-sensitive trips |
-| **LEAP** | Minimize pollution exposure | 🟠 Orange | Health-conscious users |
-| **LCO2** | Minimize carbon emissions | 🔴 Red | Environmental impact |
-| **Suggested** | Balanced optimization | 🟣 Purple | **Recommended** |
+| **Shortest** | Minimize distance | Fuel efficiency |
+| **Fastest** | Minimize time | Time-sensitive trips |
+| **LEAP** | Minimize pollution exposure | Health-conscious users |
+| **LCO2** | Minimize carbon emissions | Environmental impact |
+| **Suggested** | Balanced optimization | **Recommended** |
 
 </div>
 
@@ -323,7 +323,7 @@ We welcome contributions! Here's how you can help:
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the GNU GPL-3 License - see the [LICENSE](LICENSE) file for details.
 
 ---
 
