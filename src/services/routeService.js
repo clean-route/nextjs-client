@@ -58,7 +58,7 @@ export const buildRouteRequest = (source, destination, delayCode, mode, routePre
         source: source.position,
         destination: destination.position,
         delayCode: parseInt(delayCode),
-        mode: mode === 'car' ? 'driving-traffic' : 'scooter',
+        mode: mode === 'car' ? 'driving-traffic' : mode === 'two-wheeler' ? 'scooter' : mode,
         route_preference: routePreference,
         vehicle_mass: parseInt(vehicleMass),
         condition: vehicleCondition,
