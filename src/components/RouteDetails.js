@@ -3,12 +3,12 @@ import prettyMilliseconds from 'pretty-ms'
 import prettyMetric from 'pretty-metric'
 import Instruction from './Instruction.js'
 
-export const RouteDetails = ({ 
-    routePreference, 
-    isLoading, 
-    distance, 
-    time, 
-    exposure, 
+export const RouteDetails = ({
+    routePreference,
+    isLoading,
+    distance,
+    time,
+    exposure,
     instructions,
     shortestRoute,
     fastestRoute,
@@ -17,6 +17,11 @@ export const RouteDetails = ({
     leastCarbonRoute,
     mode
 }) => {
+    // Helper function to convert seconds to milliseconds for pretty-ms
+    const formatTime = (timeInSeconds) => {
+        if (!timeInSeconds) return 'N/A';
+        return prettyMilliseconds(timeInSeconds * 1000);
+    };
     // Route summary display
     const RouteSummary = () => (
         <div className="text-center text-xl">
@@ -117,11 +122,11 @@ export const RouteDetails = ({
                         <div className="flex justify-between">
                             <span className="text-gray-600">Time:</span>
                             <span className="font-medium">
-                                {routePreference == 'shortest' ? ((shortestRoute?.time || shortestRoute?.duration) && prettyMilliseconds(shortestRoute?.time || shortestRoute?.duration)) :
-                                 routePreference == 'fastest' ? ((fastestRoute?.duration || fastestRoute?.time) && prettyMilliseconds(fastestRoute?.duration || fastestRoute?.time)) :
-                                 routePreference == 'leap' ? (leapRoute?.time && prettyMilliseconds(leapRoute?.time)) :
-                                 routePreference == 'emission' ? (leastCarbonRoute?.time && prettyMilliseconds(leastCarbonRoute?.time)) :
-                                 routePreference == 'balanced' ? ((balancedRoute?.duration ?? balancedRoute?.time) && prettyMilliseconds(balancedRoute?.duration ?? balancedRoute?.time)) :
+                                {routePreference == 'shortest' ? formatTime(shortestRoute?.time || shortestRoute?.duration) :
+                                 routePreference == 'fastest' ? formatTime(fastestRoute?.duration || fastestRoute?.time) :
+                                 routePreference == 'leap' ? formatTime(leapRoute?.time) :
+                                 routePreference == 'emission' ? formatTime(leastCarbonRoute?.time) :
+                                 routePreference == 'balanced' ? formatTime(balancedRoute?.duration ?? balancedRoute?.time) :
                                  'N/A'}
                             </span>
                         </div>
@@ -160,8 +165,7 @@ export const RouteDetails = ({
                         <div className="flex justify-between">
                             <span className="text-gray-600">Time:</span>
                             <span className="font-medium">
-                                {(shortestRoute?.time || shortestRoute?.duration) && 
-                                    prettyMilliseconds(shortestRoute?.time || shortestRoute?.duration)}
+                                {formatTime(shortestRoute?.time || shortestRoute?.duration)}
                             </span>
                         </div>
                         <div className="flex justify-between">
@@ -191,8 +195,7 @@ export const RouteDetails = ({
                         <div className="flex justify-between">
                             <span className="text-gray-600">Time:</span>
                             <span className="font-medium">
-                                {(fastestRoute?.duration || fastestRoute?.time) && 
-                                    prettyMilliseconds(fastestRoute?.duration || fastestRoute?.time)}
+                                {formatTime(fastestRoute?.duration || fastestRoute?.time)}
                             </span>
                         </div>
                         <div className="flex justify-between">
@@ -222,7 +225,7 @@ export const RouteDetails = ({
                         <div className="flex justify-between">
                             <span className="text-gray-600">Time:</span>
                             <span className="font-medium">
-                                {leapRoute?.time && prettyMilliseconds(leapRoute?.time)}
+                                {formatTime(leapRoute?.time)}
                             </span>
                         </div>
                         <div className="flex justify-between">
@@ -252,7 +255,7 @@ export const RouteDetails = ({
                         <div className="flex justify-between">
                             <span className="text-gray-600">Time:</span>
                             <span className="font-medium">
-                                {leastCarbonRoute?.time && prettyMilliseconds(leastCarbonRoute?.time)}
+                                {formatTime(leastCarbonRoute?.time)}
                             </span>
                         </div>
                         <div className="flex justify-between">
@@ -282,8 +285,7 @@ export const RouteDetails = ({
                         <div className="flex justify-between">
                             <span className="text-gray-600">Time:</span>
                             <span className="font-medium">
-                                {(balancedRoute?.time ?? balancedRoute?.duration) && 
-                                    prettyMilliseconds(balancedRoute?.time ?? balancedRoute?.duration)}
+                                {formatTime(balancedRoute?.time ?? balancedRoute?.duration)}
                             </span>
                         </div>
                         <div className="flex justify-between">

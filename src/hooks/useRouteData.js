@@ -48,21 +48,22 @@ export const useRouteData = () => {
             displayRouteOnMap(route, source, destination, routeId, routePreference, displayRoute)
 
             // Update specific route state
+            const actualRoute = route.success ? route.data : route;
             switch (routePreference) {
                 case 'shortest':
-                    setShortestRoute(route)
+                    setShortestRoute(actualRoute)
                     break
                 case 'fastest':
-                    setFastestRoute(route)
+                    setFastestRoute(actualRoute)
                     break
                 case 'leap':
-                    setLeapRoute(route)
+                    setLeapRoute(actualRoute)
                     break
                 case 'emission':
-                    setLeastCarbonRoute(route)
+                    setLeastCarbonRoute(actualRoute)
                     break
                 case 'balanced':
-                    setBalancedRoute(route)
+                    setBalancedRoute(actualRoute)
                     break
             }
         } catch (error) {
@@ -78,7 +79,10 @@ export const useRouteData = () => {
         
         try {
             const requestBody = buildRouteRequest(source, destination, delayCode, mode, routePreference, vehicleMass, vehicleCondition, engineType)
-            const routeList = await RouteService.getAllRoutes(requestBody)
+            const response = await RouteService.getAllRoutes(requestBody)
+
+            // Handle response structure - check if it's wrapped in success/data
+            const routeList = response.success ? response.data : response;
 
             // Clear existing routes
             clearRoutesFromMap()
@@ -96,7 +100,9 @@ export const useRouteData = () => {
                 if (route) {
                     setter(route)
                     const routeId = `${mode}-${routePreference}-${source.position[0]}-${source.position[1]}-${destination.position[0]}-${destination.position[1]}-route-all-${type}`
-                    displayRouteOnMap(route, source, destination, routeId, type, displayRoute)
+                    // Create a fake response structure for displayRouteOnMap consistency
+                    const routeResponse = { success: false, data: route };
+                    displayRouteOnMap(routeResponse, source, destination, routeId, type, displayRoute)
                 }
             })
         } catch (error) {

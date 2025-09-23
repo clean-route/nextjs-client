@@ -27,6 +27,7 @@ export class RouteService {
         return await response.json()
     }
 
+
     // Get Mapbox routes (legacy)
     static async getMapboxRoutes(source, destination) {
         const query = await fetch(
@@ -67,24 +68,29 @@ export const buildRouteRequest = (source, destination, delayCode, mode, routePre
 }
 
 // Route display helper
-export const displayRouteOnMap = (route, start, end, routeId, routeType, displayRoute) => {
+export const displayRouteOnMap = (response, start, end, routeId, routeType, displayRoute) => {
+    // Handle response structure - check if it's wrapped in success/data
+    const route = response.success ? response.data : response;
     const geojson = getGeojson(route)
     displayRoute(geojson, start, end, routeId, routeType)
 }
 
 // Route data extractor
-export const extractRouteData = (route, mode) => {
+export const extractRouteData = (response, mode) => {
+    // Handle response structure - check if it's wrapped in success/data
+    const route = response.success ? response.data : response;
+
     if (mode === 'scooter') {
         return {
-            time: route.time,
+            time: route.time * 1000, // Convert seconds to milliseconds for pretty-ms
             instructions: route.instructions,
             distance: route.distance,
             exposure: route.total_exposure
         }
     } else {
         return {
-            time: route.duration,
-            instructions: route.legs[0].steps,
+            time: route.duration * 1000, // Convert seconds to milliseconds for pretty-ms
+            instructions: route.legs && route.legs[0] ? route.legs[0].steps : [],
             distance: route.distance,
             exposure: route.total_exposure
         }
